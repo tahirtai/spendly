@@ -1,0 +1,567 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Spendly - Student Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&amp;family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                            "primary-fixed": "#e1e0ff",
+                            "on-tertiary-fixed-variant": "#783200",
+                            "on-error": "#ffffff",
+                            "surface-container-lowest": "#ffffff",
+                            "surface-dim": "#cbdbf5",
+                            "on-primary": "#ffffff",
+                            "on-secondary": "#ffffff",
+                            "secondary-fixed": "#6ffbbe",
+                            "error-container": "#ffdad6",
+                            "on-tertiary-fixed": "#341100",
+                            "surface-container": "#e5eeff",
+                            "on-tertiary-container": "#fffbff",
+                            "on-secondary-container": "#00714d",
+                            "on-primary-container": "#fffbff",
+                            "tertiary": "#994100",
+                            "background": "#f8f9ff",
+                            "secondary": "#006c49",
+                            "surface-container-highest": "#d3e4fe",
+                            "surface-container-low": "#eff4ff",
+                            "on-error-container": "#93000a",
+                            "on-surface-variant": "#464554",
+                            "on-tertiary": "#ffffff",
+                            "surface": "#f8f9ff",
+                            "on-surface": "#0b1c30",
+                            "on-background": "#0b1c30",
+                            "surface-variant": "#d3e4fe",
+                            "on-primary-fixed": "#07006c",
+                            "primary-fixed-dim": "#c0c1ff",
+                            "surface-bright": "#f8f9ff",
+                            "inverse-on-surface": "#eaf1ff",
+                            "outline-variant": "#c7c4d7",
+                            "primary": "#4648d4",
+                            "on-primary-fixed-variant": "#2f2ebe",
+                            "outline": "#767586",
+                            "on-secondary-fixed": "#002113",
+                            "inverse-surface": "#213145",
+                            "secondary-fixed-dim": "#4edea3",
+                            "surface-container-high": "#dce9ff",
+                            "primary-container": "#6063ee",
+                            "surface-tint": "#494bd6",
+                            "tertiary-container": "#c05400",
+                            "tertiary-fixed-dim": "#ffb690",
+                            "tertiary-fixed": "#ffdbca",
+                            "error": "#ba1a1a",
+                            "secondary-container": "#6cf8bb",
+                            "inverse-primary": "#c0c1ff",
+                            "on-secondary-fixed-variant": "#005236"
+                    },
+                    "borderRadius": {
+                            "DEFAULT": "0.25rem",
+                            "lg": "0.5rem",
+                            "xl": "0.75rem",
+                            "full": "9999px"
+                    },
+                    "spacing": {
+                            "sidebar-width": "280px",
+                            "container-max": "1440px",
+                            "lg": "24px",
+                            "xl": "40px",
+                            "xs": "4px",
+                            "md": "16px",
+                            "base": "4px",
+                            "sm": "8px",
+                            "2xl": "64px"
+                    },
+                    "fontFamily": {
+                            "label-md": [
+                                    "Geist"
+                            ],
+                            "display-lg": [
+                                    "Geist"
+                            ],
+                            "headline-lg": [
+                                    "Geist"
+                            ],
+                            "label-sm": [
+                                    "Geist"
+                            ],
+                            "body-sm": [
+                                    "Inter"
+                            ],
+                            "headline-md": [
+                                    "Geist"
+                            ],
+                            "body-md": [
+                                    "Inter"
+                            ],
+                            "headline-lg-mobile": [
+                                    "Geist"
+                            ],
+                            "body-lg": [
+                                    "Inter"
+                            ]
+                    },
+                    "fontSize": {
+                            "label-md": [
+                                    "14px",
+                                    {
+                                            "lineHeight": "1.2",
+                                            "letterSpacing": "0.01em",
+                                            "fontWeight": "500"
+                                    }
+                            ],
+                            "display-lg": [
+                                    "48px",
+                                    {
+                                            "lineHeight": "1.1",
+                                            "letterSpacing": "-0.04em",
+                                            "fontWeight": "700"
+                                    }
+                            ],
+                            "headline-lg": [
+                                    "32px",
+                                    {
+                                            "lineHeight": "1.2",
+                                            "letterSpacing": "-0.02em",
+                                            "fontWeight": "600"
+                                    }
+                            ],
+                            "label-sm": [
+                                    "12px",
+                                    {
+                                            "lineHeight": "1.2",
+                                            "fontWeight": "600"
+                                    }
+                            ],
+                            "body-sm": [
+                                    "13px",
+                                    {
+                                            "lineHeight": "1.5",
+                                            "fontWeight": "400"
+                                    }
+                            ],
+                            "headline-md": [
+                                    "20px",
+                                    {
+                                            "lineHeight": "1.4",
+                                            "fontWeight": "600"
+                                    }
+                            ],
+                            "body-md": [
+                                    "15px",
+                                    {
+                                            "lineHeight": "1.5",
+                                            "fontWeight": "400"
+                                    }
+                            ],
+                            "headline-lg-mobile": [
+                                    "24px",
+                                    {
+                                            "lineHeight": "1.2",
+                                            "fontWeight": "600"
+                                    }
+                            ],
+                            "body-lg": [
+                                    "18px",
+                                    {
+                                            "lineHeight": "1.6",
+                                            "fontWeight": "400"
+                                    }
+                            ]
+                    }
+            },
+                },
+        }
+    </script>
+<style>
+        .glass-panel {
+            background-color: rgba(255, 255, 255, 0.65);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.03);
+            border-top-color: rgba(255, 255, 255, 0.8);
+        }
+        
+        .glass-panel:hover {
+            background-color: rgba(255, 255, 255, 0.75);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+        }
+
+        .glass-input {
+            background-color: rgba(0, 0, 0, 0.02);
+            border: 1px solid transparent;
+        }
+
+        .glass-input:focus {
+            border-color: theme('colors.primary');
+            box-shadow: 0 0 0 4px rgba(70, 72, 212, 0.1);
+            outline: none;
+        }
+
+        .table-row-hover:hover {
+            background-color: rgba(99, 102, 241, 0.02);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen flex antialiased">
+<!-- SideNavBar -->
+<nav class="hidden md:flex flex-col p-md bg-white/65 backdrop-blur-[30px] fixed left-0 top-0 h-full w-[280px] border-r border-white/40 shadow-[0_10px_40px_rgba(0,0,0,0.03)] z-50">
+<div class="flex items-center gap-sm mb-xl">
+<img class="w-8 h-8 rounded-full object-cover" data-alt="A highly detailed 3D rendering of a stylized, premium financial management logo icon, featuring clean intersecting geometric shapes in a bright, modern light-mode setting. Soft studio lighting highlights the glossy materials, using a palette of crisp white and deep indigo. The mood is precise, professional, and velocity-focused. 8k resolution, photorealistic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBrSLzKVzu4JiJPynqgjB8YsPCkR-A-8xqwN6022qnIxv2BueVxwDDLLNL3EQm7LF1qCSTU8m7ipwSP4AF913d3cPVMgnjULrLwdJwBL8qTFSBHJOH3KG-WslgF10-g5T2U24GINwaKlO4W3hSmyE6A-gyJurs6WoBrnz4Eu-Zv7vdYwEhaM5-r4Weog0G576s2f_LdM5ucY1Esh1gH-4_EO0pQ-drcdzQUnnGvir_G5MAvGSqt5ueY">
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-primary">Spendly</h1>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Premium Management</p>
+</div>
+</div>
+<div class="flex-1 space-y-sm">
+<a class="flex items-center gap-md px-md py-sm rounded-lg bg-primary/10 text-primary border-l-[3px] border-primary font-label-md text-label-md transition-all duration-300" href="#">
+<span class="material-symbols-outlined" style="font-size: 20px;">dashboard</span>
+                Dashboard
+            </a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-white/75 transition-all duration-300 font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" style="font-size: 20px;">restaurant</span>
+                Tiffin
+            </a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-white/75 transition-all duration-300 font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" style="font-size: 20px;">receipt_long</span>
+                Daily Expenses
+            </a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-white/75 transition-all duration-300 font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" style="font-size: 20px;">payments</span>
+                Payments
+            </a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-white/75 transition-all duration-300 font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" style="font-size: 20px;">history</span>
+                History
+            </a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-white/75 transition-all duration-300 font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" style="font-size: 20px;">analytics</span>
+                Reports
+            </a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-white/75 transition-all duration-300 font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" style="font-size: 20px;">admin_panel_settings</span>
+                Admin
+            </a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-white/75 transition-all duration-300 font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" style="font-size: 20px;">settings</span>
+                Settings
+            </a>
+</div>
+<div class="mt-auto pt-md border-t border-white/40 space-y-sm">
+<button class="w-full bg-primary text-on-primary py-sm rounded-full font-label-md text-label-md hover:bg-primary-container hover:text-on-primary-container transition-colors shadow-sm">
+                Record Meal
+            </button>
+<div class="flex justify-between px-md pt-sm text-on-surface-variant">
+<a class="flex flex-col items-center hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined" style="font-size: 16px;">bed</span>
+<span class="font-label-sm text-label-sm mt-xs">Rent</span>
+</a>
+<a class="flex flex-col items-center hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined" style="font-size: 16px;">bolt</span>
+<span class="font-label-sm text-label-sm mt-xs">Power</span>
+</a>
+<a class="flex flex-col items-center hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined" style="font-size: 16px;">local_laundry_service</span>
+<span class="font-label-sm text-label-sm mt-xs">Laundry</span>
+</a>
+</div>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col md:ml-[280px] min-w-0 max-w-container-max mx-auto w-full">
+<!-- TopNavBar -->
+<header class="flex justify-between items-center px-lg w-full h-16 bg-white/65 backdrop-blur-[30px] sticky top-0 z-40 transition-all">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-on-surface-variant" style="font-size: 20px;">search</span>
+<input class="glass-input rounded-full py-1 px-3 font-body-sm text-body-sm w-64" placeholder="Search transactions..." type="text">
+</div>
+<div class="flex items-center gap-md">
+<button class="text-on-surface-variant hover:text-primary transition-colors relative">
+<span class="material-symbols-outlined" style="font-size: 20px;">notifications</span>
+<span class="absolute top-0 right-0 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined" style="font-size: 20px;">apps</span>
+</button>
+<img class="w-8 h-8 rounded-full object-cover border border-outline-variant cursor-pointer" data-alt="A high-quality, professional headshot of a young adult student looking confident and approachable, set against a pristine, brightly lit studio background. The lighting is soft and flattering, emphasizing clean, modern aesthetic with subtle high-key tones. 8k resolution, crisp details." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAy6DXAGvhuD6ofOZr_OQJ1sWVQAR3HC8_7lmg9sFwwtCLlJYlqqlDIaYlqV2KO0MmtD7Vbm79u022oKodDz92Ah6g33MP1nMyjRRrT99gj4kjhsZlCDV1h9o7Ph7kwpwIqUPHiMTham0zJYAwPx38Zxa28aXgIElJGa5g9iAoId5KIp8_2YAdBToH5QAvwahavzmwWkSoTr5J0I7__DygEIa8Gw-RP1FyL3Xo30ArQlPGjd0LTkxoC">
+</div>
+</header>
+<!-- Dashboard Content -->
+<div class="p-lg md:p-xl space-y-xl flex-1 overflow-y-auto">
+<div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-md mb-md">
+<div>
+<h2 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg font-bold text-on-surface tracking-tight">Welcome back, Alex</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Here is your financial overview for October 2026.</p>
+</div>
+<div class="flex gap-sm">
+<button class="glass-panel px-md py-sm rounded-full font-label-md text-label-md text-on-surface-variant flex items-center gap-xs">
+<span class="material-symbols-outlined" style="font-size: 16px;">receipt_long</span>
+                        Add Expense
+                    </button>
+<button class="bg-primary text-on-primary px-md py-sm rounded-full font-label-md text-label-md flex items-center gap-xs shadow-sm hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined" style="font-size: 16px;">add</span>
+                        New Payment
+                    </button>
+</div>
+</div>
+<!-- Metrics Bento Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-md">
+<!-- Current Month Total -->
+<div class="glass-panel rounded-xl p-lg flex flex-col justify-between transition-all duration-300 group">
+<div class="flex justify-between items-start mb-md">
+<div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined" data-weight="fill" style="font-size: 20px;">account_balance_wallet</span>
+</div>
+<span class="bg-[rgba(16,185,129,0.1)] text-[#059669] px-2 py-1 rounded-full font-label-sm text-label-sm flex items-center gap-xs">
+<span class="material-symbols-outlined" style="font-size: 12px;">trending_down</span>
+                            12%
+                        </span>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-1">Current Month Total</p>
+<h3 class="font-display-lg text-display-lg text-on-surface">₹1,245.50</h3>
+</div>
+</div>
+<!-- Remaining Balance -->
+<div class="glass-panel rounded-xl p-lg flex flex-col justify-between transition-all duration-300 group relative overflow-hidden">
+<div class="absolute inset-0 opacity-10 bg-gradient-to-br from-secondary to-transparent pointer-events-none"></div>
+<div class="flex justify-between items-start mb-md relative z-10">
+<div class="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center text-secondary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined" data-weight="fill" style="font-size: 20px;">savings</span>
+</div>
+</div>
+<div class="relative z-10">
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-1">Remaining Budget</p>
+<h3 class="font-display-lg text-display-lg text-on-surface">₹454.50</h3>
+<div class="w-full bg-surface-container-highest h-1.5 rounded-full mt-3 overflow-hidden">
+<div class="bg-secondary h-full rounded-full" style="width: 73%"></div>
+</div>
+</div>
+</div>
+<!-- Meals This Month -->
+<div class="glass-panel rounded-xl p-lg flex flex-col justify-between transition-all duration-300 group">
+<div class="flex justify-between items-start mb-md">
+<div class="w-10 h-10 rounded-full bg-tertiary/10 flex items-center justify-center text-tertiary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined" data-weight="fill" style="font-size: 20px;">restaurant</span>
+</div>
+<span class="text-on-surface-variant font-label-sm text-label-sm">
+                            45 / 60
+                        </span>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-1">Meals Tracked</p>
+<h3 class="font-display-lg text-display-lg text-on-surface">45<span class="text-headline-md font-body-sm text-on-surface-variant ml-1">meals</span></h3>
+</div>
+</div>
+<!-- Today's Expense -->
+<div class="glass-panel rounded-xl p-lg flex flex-col justify-between transition-all duration-300 group">
+<div class="flex justify-between items-start mb-md">
+<div class="w-10 h-10 rounded-full bg-error/10 flex items-center justify-center text-error group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined" data-weight="fill" style="font-size: 20px;">credit_card</span>
+</div>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-1">Today's Expense</p>
+<h3 class="font-display-lg text-display-lg text-on-surface">₹32.00</h3>
+</div>
+</div>
+</div>
+<!-- Main Analytics & Activity Area -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-lg">
+<!-- Chart Area -->
+<div class="lg:col-span-2 glass-panel rounded-xl p-lg flex flex-col">
+<div class="flex justify-between items-center mb-md">
+<h3 class="font-headline-md text-headline-md font-semibold text-on-surface">Monthly Expense Trend</h3>
+<select class="glass-input rounded-full py-1 px-3 font-label-sm text-label-sm text-on-surface-variant text-sm cursor-pointer border-none outline-none ring-0">
+<option>Last 30 Days</option>
+<option>This Quarter</option>
+<option>This Year</option>
+</select>
+</div>
+<div class="flex-1 min-h-[300px] relative w-full">
+<canvas id="expenseChart" width="624" height="443" style="display: block; box-sizing: border-box; height: 394.6px; width: 555.5px;"></canvas>
+</div>
+</div>
+<!-- Right Column: Alerts & Recent Activity -->
+<div class="space-y-lg flex flex-col">
+<!-- Missing Entries Alert -->
+<div class="bg-[rgba(249,115,22,0.05)] border border-[rgba(249,115,22,0.2)] rounded-xl p-md flex items-start gap-md">
+<div class="w-8 h-8 rounded-full bg-[rgba(249,115,22,0.1)] flex items-center justify-center text-[#ea580c] shrink-0 mt-1">
+<span class="material-symbols-outlined" style="font-size: 18px;">warning</span>
+</div>
+<div>
+<h4 class="font-label-md text-label-md font-semibold text-on-surface">Missing Entries Detected</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1 mb-2">You haven't recorded meals for Oct 12th and 13th.</p>
+<button class="text-sm font-label-sm text-[#ea580c] hover:underline flex items-center gap-xs">
+                                Resolve Now <span class="material-symbols-outlined" style="font-size: 14px;">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Recent Activity List -->
+<div class="glass-panel rounded-xl p-lg flex-1 flex flex-col">
+<div class="flex justify-between items-center mb-md">
+<h3 class="font-headline-md text-headline-md font-semibold text-on-surface">Recent Activity</h3>
+<button class="font-label-sm text-label-sm text-primary hover:underline">View All</button>
+</div>
+<div class="space-y-1 flex-1 overflow-y-auto">
+<!-- Activity Item -->
+<div class="flex items-center justify-between p-sm rounded-lg table-row-hover transition-colors">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined" style="font-size: 18px;">local_cafe</span>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface">Coffee Shop</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Today, 9:41 AM</p>
+</div>
+</div>
+<span class="font-label-md text-label-md font-semibold text-on-surface">-₹4.50</span>
+</div>
+<!-- Activity Item -->
+<div class="flex items-center justify-between p-sm rounded-lg table-row-hover transition-colors">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" style="font-size: 18px;">south_west</span>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface">Monthly Allowance</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Yesterday</p>
+</div>
+</div>
+<span class="font-label-md text-label-md font-semibold text-[#059669]">+₹500.00</span>
+</div>
+<!-- Activity Item -->
+<div class="flex items-center justify-between p-sm rounded-lg table-row-hover transition-colors">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined" style="font-size: 18px;">menu_book</span>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface">Textbooks</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Oct 14, 2026</p>
+</div>
+</div>
+<span class="font-label-md text-label-md font-semibold text-on-surface">-₹120.00</span>
+</div>
+<!-- Activity Item -->
+<div class="flex items-center justify-between p-sm rounded-lg table-row-hover transition-colors">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined" style="font-size: 18px;">bolt</span>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface">Electricity Bill</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Oct 12, 2026</p>
+</div>
+</div>
+<span class="font-label-md text-label-md font-semibold text-on-surface">-₹45.20</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<script>
+        // Chart.js Configuration for Monthly Trend
+        document.addEventListener('DOMContentLoaded', function() {
+            const ctx = document.getElementById('expenseChart').getContext('2d');
+            
+            // Create a gradient for the line chart fill
+            let gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, 'rgba(70, 72, 212, 0.2)'); // primary color with opacity
+            gradient.addColorStop(1, 'rgba(70, 72, 212, 0)');
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Oct 1', 'Oct 5', 'Oct 10', 'Oct 15', 'Oct 20', 'Oct 25', 'Oct 30'],
+                    datasets: [{
+                        label: 'Daily Expenses',
+                        data: [45, 120, 65, 210, 80, 150, 95],
+                        borderColor: '#4648d4', // primary color
+                        backgroundColor: gradient,
+                        borderWidth: 2,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: '#4648d4',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        fill: true,
+                        tension: 0.4 // smooth curves
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                            titleColor: '#0b1c30',
+                            bodyColor: '#464554',
+                            borderColor: 'rgba(0,0,0,0.05)',
+                            borderWidth: 1,
+                            padding: 12,
+                            displayColors: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return '$' + context.parsed.y;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false,
+                                drawBorder: false
+                            },
+                            ticks: {
+                                color: '#767586', // outline color
+                                font: {
+                                    family: "'Inter', sans-serif",
+                                    size: 12
+                                }
+                            }
+                        },
+                        y: {
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.04)',
+                                drawBorder: false,
+                                borderDash: [5, 5]
+                            },
+                            ticks: {
+                                color: '#767586',
+                                font: {
+                                    family: "'Inter', sans-serif",
+                                    size: 12
+                                },
+                                callback: function(value) {
+                                    return '$' + value;
+                                }
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index',
+                    },
+                }
+            });
+        });
+    </script>
+
+
+</body></html>

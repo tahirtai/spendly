@@ -1,0 +1,122 @@
+﻿[
+    {
+        "index":  1,
+        "id":  "544ddc57247a47ffbca387322d6c4f06",
+        "title":  "Dashboard — Spendly",
+        "file":  "stitch_designs/01_Dashboard_Spendly.html",
+        "prompt":  "Spendly Student Dashboard: The central hub for a resident. Includes top metric cards for Current Month Total, Remaining Balance, Meals This Month, and Today\u0027s Expense. Features a Quick Actions bar (Record Meal, Add Expense, Add Payment), a \"Monthly Expense Trend\" line chart, a \"Recent Activity\" list, and a \"Missing Entries\" alert widget. Full SideNavBar and TopNavBar integrated.",
+        "deviceType":  "DESKTOP",
+        "width":  "2560",
+        "height":  "2048"
+    },
+    {
+        "index":  2,
+        "id":  "822f6c935218441a8689a7cac12ff3a0",
+        "title":  "Login — Spendly",
+        "file":  "stitch_designs/02_Login_Spendly.html",
+        "prompt":  "A premium SaaS login page for Spendly. Features a split-screen layout with a beautiful abstract geometric 3D visual on one side and a clean, centered login form on the other. Includes social login options (Google), email/password fields with soft glassmorphism, and a link to the registration page. Style: 2026 Premium SaaS, soft light, minimal.",
+        "deviceType":  "DESKTOP",
+        "width":  "2560",
+        "height":  "2048"
+    },
+    {
+        "index":  3,
+        "id":  "757e5cda3af543618ff1a6bc37630dfc",
+        "title":  "User Profile — Spendly",
+        "file":  "stitch_designs/03_User_Profile_Spendly.html",
+        "prompt":  "A clean User Profile page for Spendly. Shows user avatar, personal details (Name, Email, Room Number), and current Workspace info. Includes tabs for \u0027Account\u0027, \u0027Security\u0027, and \u0027Preferences\u0027. Premium SaaS aesthetic with spacious layout and high-quality typography.",
+        "deviceType":  "DESKTOP",
+        "width":  "2560",
+        "height":  "2048"
+    },
+    {
+        "index":  4,
+        "id":  "c227647892554533951658e6bf6cf4a4",
+        "title":  "Daily Expenses — Spendly",
+        "file":  "stitch_designs/04_Daily_Expenses_Spendly.html",
+        "prompt":  "Spendly Daily Expenses: A clean, premium table/card view of all miscellaneous expenses. Each entry shows a category icon, category name (Food, Grocery, Travel, etc.), amount, date, and note. Includes a search bar, category filters, and a floating \"Add Expense\" button. SideNavBar active on \"Daily Expenses\" tab.",
+        "deviceType":  "DESKTOP",
+        "width":  "2560",
+        "height":  "2048"
+    },
+    {
+        "index":  5,
+        "id":  "353facb8ecd140a0b713a0b0403ae5d8",
+        "title":  "Settings — Spendly",
+        "file":  "stitch_designs/05_Settings_Spendly.html",
+        "prompt":  "A comprehensive Settings page for Spendly. Side-nav within the main content area for \u0027General\u0027, \u0027Meal Prices\u0027 (admin only view), \u0027Billing\u0027, and \u0027Danger Zone\u0027. Features toggles for notifications and theme settings. Glassmorphism cards and subtle borders.",
+        "deviceType":  "DESKTOP",
+        "width":  "2560",
+        "height":  "2200"
+    },
+    {
+        "index":  6,
+        "id":  "12b7ef365cb749dcbae40c75f1353dac",
+        "title":  "Reports \u0026 Analytics — Spendly",
+        "file":  "stitch_designs/06_Reports_Analytics_Spendly.html",
+        "prompt":  "A professional Reports \u0026 Analytics page for Spendly. Features metric cards for Total Spent, Meal Count (Half/Full), and Outstanding balance. Includes a beautiful monthly trend line chart and a pie chart for expense categories. Buttons for \u0027Download PDF\u0027 and \u0027Export CSV\u0027. Layout: Bento grid style with glassmorphism cards.",
+        "deviceType":  "DESKTOP",
+        "width":  "2560",
+        "height":  "2048"
+    },
+    {
+        "index":  7,
+        "id":  "bedca42a52ef475a9807c8b37d9f28ac",
+        "title":  "Tiffin Tracking — Spendly",
+        "file":  "stitch_designs/07_Tiffin_Tracking_Spendly.html",
+        "prompt":  "Spendly Tiffin Tracking Module: A calendar-based interface. Today\u0027s date is highlighted. Each day card features one-click toggles for Lunch (Half, Full, Skip) and Dinner (Half, Full, Skip). Includes a summary sidebar showing \"This Month\u0027s Meal Total\" and \"Predicted Cost\". Visual indicators for Completed, Incomplete, and Missing days. Full SideNavBar and TopNavBar integrated.",
+        "deviceType":  "DESKTOP",
+        "width":  "2560",
+        "height":  "2608"
+    },
+    {
+        "index":  8,
+        "id":  "7aff5f4109a740d09c6ab3d25e3fe3a3",
+        "title":  "Admin Dashboard — Spendly",
+        "file":  "stitch_designs/08_Admin_Dashboard_Spendly.html",
+        "prompt":  "Spendly Admin Dashboard: A high-level view for workspace owners. Metric cards for Total Students, Pending Payments, Total Revenue, and Outstanding Balance. Features a \"Pending Verification\" table for quick approval of payments and a \"Student Overview\" list. Includes workspace-wide analytics charts. SideNavBar active on \"Admin\" tab.",
+        "deviceType":  "DESKTOP",
+        "width":  "2560",
+        "height":  "2616"
+    },
+    {
+        "index":  9,
+        "id":  "ea6922807778449cb9764fbcae2e4857",
+        "title":  "Monthly History — Spendly",
+        "file":  "stitch_designs/09_Monthly_History_Spendly.html",
+        "prompt":  "Spendly Monthly History: A timeline layout of immutable monthly snapshots. Each month is a premium card showing the Total, Paid, and Remaining balance for that period. Includes a \"View Details\" button for each month to see the full snapshot. SideNavBar active on \"History\" tab.",
+        "deviceType":  "DESKTOP",
+        "width":  "2560",
+        "height":  "2048"
+    },
+    {
+        "index":  10,
+        "id":  "cff5a3eb286940a39a8cba271138bb99",
+        "title":  "Spendly — Premium Expense Management",
+        "file":  "stitch_designs/10_Spendly_Premium_Expense_Management.html",
+        "prompt":  "Spendly Landing Page: A premium, high-converting marketing page. Features a hero section with a bold value proposition (\"Effortless Hostel Expense Management\"), glassmorphic feature cards (Tiffin Tracking, Daily Expenses, Payment Proofs), a \"How it Works\" section, and a clear CTA to \"Get Started\". Use high-quality illustrations or abstract 3D elements to convey a modern SaaS feel.",
+        "deviceType":  "DESKTOP",
+        "width":  "2560",
+        "height":  "2048"
+    },
+    {
+        "index":  11,
+        "id":  "9d52eea3a4614ba398c7d392abe9ae1b",
+        "title":  "Register — Spendly",
+        "file":  "stitch_designs/11_Register_Spendly.html",
+        "prompt":  "A premium SaaS registration page for Spendly. Split-screen layout matching the login page. Form includes fields for Full Name, Email, Password, and a Workspace ID (optional). Clear CTA to \u0027Create Account\u0027 and a link to the login page. Style: 2026 Premium SaaS, airy, soft shadows.",
+        "deviceType":  "DESKTOP",
+        "width":  "2560",
+        "height":  "2048"
+    },
+    {
+        "index":  12,
+        "id":  "6a904ef97f674cda812a766b8a7e183a",
+        "title":  "Payments — Spendly",
+        "file":  "stitch_designs/12_Payments_Spendly.html",
+        "prompt":  "Spendly Payments: A list of payment records (Cash/UPI) with status badges (Pending, Approved, Rejected). Includes an \"Add Payment\" section with a drag-and-drop zone for UPI screenshots. UPI proof should have a small image thumbnail that opens a preview modal. Metric cards show \"Total Paid\" and \"Pending Verification\". SideNavBar active on \"Payments\" tab.",
+        "deviceType":  "DESKTOP",
+        "width":  "1280",
+        "height":  "1024"
+    }
+]

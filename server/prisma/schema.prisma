@@ -1,0 +1,173 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  STUDENT
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum MealOption {
+  HALF
+  FULL
+  SKIP
+}
+
+enum PaymentType {
+  CASH
+  UPI
+}
+
+enum PaymentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum MonthStatus {
+  OPEN
+  CLOSED
+  PAID
+  PENDING
+}
+
+model Workspace {
+  id               String            @id @default(uuid())
+  name             String
+  code             String            @unique
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  members          WorkspaceMember[]
+  mealPrices       MealPrice[]
+  meals            Meal[]
+  expenses         Expense[]
+  payments         Payment[]
+  monthlySnapshots MonthlySnapshot[]
+  auditLogs        AuditLog[]
+}
+
+model User {
+  id               String            @id
+  email            String            @unique
+  fullName         String
+  phone            String?
+  avatarUrl        String?
+  role             Role              @default(STUDENT)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  workspaceMembers WorkspaceMember[]
+  meals            Meal[]
+  expenses         Expense[]
+  payments         Payment[]
+  auditLogs        AuditLog[]
+}
+
+model WorkspaceMember {
+  id          String    @id @default(uuid())
+  workspaceId String
+  userId      String
+  role        Role      @default(STUDENT)
+  joinedAt    DateTime  @default(now())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+}
+
+model MealPrice {
+  id            String    @id @default(uuid())
+  workspaceId   String
+  halfPrice     Float
+  fullPrice     Float
+  effectiveFrom DateTime  @default(now())
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model Meal {
+  id          String     @id @default(uuid())
+  workspaceId String
+  userId      String
+  date        DateTime   @db.Date
+  lunch       MealOption @default(SKIP)
+  dinner      MealOption @default(SKIP)
+  lunchCost   Float      @default(0)
+  dinnerCost  Float      @default(0)
+  totalCost   Float      @default(0)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  workspace   Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId, date])
+}
+
+model ExpenseCategory {
+  id        String  @id @default(uuid())
+  name      String  @unique
+  isDefault Boolean @default(true)
+}
+
+model Expense {
+  id          String    @id @default(uuid())
+  workspaceId String
+  userId      String
+  category    String
+  amount      Float
+  note        String?
+  date        DateTime  @db.Date
+  createdAt   DateTime  @default(now())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Payment {
+  id             String        @id @default(uuid())
+  workspaceId    String
+  userId         String
+  type           PaymentType
+  amount         Float
+  screenshotPath String?
+  note           String?
+  date           DateTime      @db.Date
+  status         PaymentStatus @default(PENDING)
+  verifiedBy     String?
+  createdAt      DateTime      @default(now())
+  workspace      Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model MonthlySnapshot {
+  id           String      @id @default(uuid())
+  workspaceId  String
+  userId       String
+  month        String // Format: YYYY-MM
+  mealTotal    Float
+  expenseTotal Float
+  paymentTotal Float
+  balanceDue   Float
+  status       MonthStatus @default(OPEN)
+  isLocked     Boolean     @default(false)
+  createdAt    DateTime    @default(now())
+  workspace    Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId, month])
+}
+
+model AuditLog {
+  id          String    @id @default(uuid())
+  workspaceId String
+  actorId     String
+  action      String
+  resource    String
+  oldValue    Json?
+  newValue    Json?
+  createdAt   DateTime  @default(now())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  actor       User      @relation(fields: [actorId], references: [id], onDelete: Cascade)
+}
