@@ -1,18 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { Receipt, Plus, Trash2, Edit2, Search, Filter, ArrowUpDown, ChevronLeft, ChevronRight, Tag, X } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Receipt, Plus, Trash2, Edit2, Search, ChevronLeft, ChevronRight, Tag, X, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
+import { api, ApiError } from '../../lib/api';
+import { CreateExpenseSchema, UpdateExpenseSchema } from 'spendly-shared';
 
 interface ExpenseItem {
   id: string;
   category: string;
   amount: number;
-  note?: string;
+  note?: string | null;
   date: string;
 }
+
+const DEFAULT_CATEGORIES = ['Food', 'Tea', 'Snacks', 'Grocery', 'Laundry', 'Travel', 'Medical', 'Shopping', 'Other'];
 
 export const ExpensesView: React.FC = () => {
   const { user } = useAuthStore();
   const [expenses, setExpenses] = useState<ExpenseItem[]>([]);
+  const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES);
   const [isLoading, setIsLoading] = useState(true);
 
   // Filters & Controls
@@ -22,101 +27,113 @@ export const ExpensesView: React.FC = () => {
   const [page, setPage] = useState(1);
   const itemsPerPage = 5;
 
-  // Form State
+  // Add Form State
   const [category, setCategory] = useState('Food');
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [formStatus, setFormStatus] = useState<'' | 'success' | 'error'>('');
 
   // Edit Modal State
   const [editingExpense, setEditingExpense] = useState<ExpenseItem | null>(null);
+  const [editErrors, setEditErrors] = useState<Record<string, string>>({});
 
-  const categories = ['Food', 'Tea', 'Snacks', 'Grocery', 'Laundry', 'Travel', 'Medical', 'Shopping', 'Other'];
+  // Load categories from DB
+  useEffect(() => {
+    api.get('/expense-categories').then(data => {
+      if (data.categories?.length) setCategories(data.categories);
+    }).catch(() => {});
+  }, []);
 
-  // Load expenses from database
-  const fetchExpenses = async () => {
+  const fetchExpenses = useCallback(async () => {
     if (!user?.id) return;
     setIsLoading(true);
     try {
-      const queryParams = new URLSearchParams({
-        userId: user.id,
-        search,
-        category: selectedCategory,
-        sortBy,
-      });
-
-      const res = await fetch(`/api/expenses?${queryParams.toString()}`);
-      if (res.ok) {
-        const data = await res.json();
-        setExpenses(data.expenses || []);
-      }
+      const params = new URLSearchParams({ search, category: selectedCategory, sortBy });
+      const data = await api.get(`/expenses?${params}`);
+      setExpenses(data.expenses || []);
+      setPage(1);
     } catch (err) {
       console.error('Failed to fetch expenses:', err);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user?.id, search, selectedCategory, sortBy]);
 
   useEffect(() => {
     fetchExpenses();
-  }, [user?.id, search, selectedCategory, sortBy]);
+  }, [fetchExpenses]);
 
   const handleAddExpense = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!amount || !user?.id) return;
+    setFormErrors({});
+    setFormStatus('');
+
+    const result = CreateExpenseSchema.safeParse({
+      category,
+      amount: parseFloat(amount),
+      note: note || undefined,
+      date,
+    });
+
+    if (!result.success) {
+      const errors: Record<string, string> = {};
+      for (const [field, msgs] of Object.entries(result.error.flatten().fieldErrors)) {
+        errors[field] = (msgs as string[])[0];
+      }
+      setFormErrors(errors);
+      return;
+    }
 
     try {
-      const res = await fetch('/api/expenses', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user.id,
-          category,
-          amount: parseFloat(amount),
-          note,
-          date,
-        }),
-      });
-
-      if (res.ok) {
-        setAmount('');
-        setNote('');
-        fetchExpenses();
-      }
-    } catch (err) {
-      console.error('Failed to create expense:', err);
+      await api.post('/expenses', result.data);
+      setAmount('');
+      setNote('');
+      setFormStatus('success');
+      setTimeout(() => setFormStatus(''), 2000);
+      fetchExpenses();
+    } catch (err: any) {
+      setFormErrors({ form: err instanceof ApiError ? err.message : 'Failed to save expense.' });
+      setFormStatus('error');
     }
   };
 
   const handleUpdateExpense = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingExpense) return;
+    setEditErrors({});
+
+    const result = UpdateExpenseSchema.safeParse({
+      category: editingExpense.category,
+      amount: Number(editingExpense.amount),
+      note: editingExpense.note || undefined,
+      date: editingExpense.date,
+    });
+
+    if (!result.success) {
+      const errors: Record<string, string> = {};
+      for (const [field, msgs] of Object.entries(result.error.flatten().fieldErrors)) {
+        errors[field] = (msgs as string[])[0];
+      }
+      setEditErrors(errors);
+      return;
+    }
 
     try {
-      const res = await fetch(`/api/expenses/${editingExpense.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          category: editingExpense.category,
-          amount: editingExpense.amount,
-          note: editingExpense.note,
-          date: editingExpense.date,
-        }),
-      });
-
-      if (res.ok) {
-        setEditingExpense(null);
-        fetchExpenses();
-      }
-    } catch (err) {
-      console.error('Failed to update expense:', err);
+      await api.put(`/expenses/${editingExpense.id}`, result.data);
+      setEditingExpense(null);
+      fetchExpenses();
+    } catch (err: any) {
+      setEditErrors({ form: err instanceof ApiError ? err.message : 'Failed to update expense.' });
     }
   };
 
   const handleDeleteExpense = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this expense?')) return;
     try {
-      const res = await fetch(`/api/expenses/${id}`, { method: 'DELETE' });
-      if (res.ok) fetchExpenses();
+      await api.delete(`/expenses/${id}`);
+      fetchExpenses();
     } catch (err) {
       console.error('Failed to delete expense:', err);
     }
@@ -124,7 +141,7 @@ export const ExpensesView: React.FC = () => {
 
   const totalExpenseSum = expenses.reduce((acc, curr) => acc + (curr.amount || 0), 0);
 
-  // Pagination logic
+  // Pagination
   const totalPages = Math.ceil(expenses.length / itemsPerPage) || 1;
   const paginatedExpenses = expenses.slice((page - 1) * itemsPerPage, page * itemsPerPage);
 
@@ -144,7 +161,7 @@ export const ExpensesView: React.FC = () => {
 
         <div className="stitch-card px-5 py-2.5 bg-white border-[#e2e8f0]">
           <span className="text-xs text-[#767586] block">Total Logged Expenses:</span>
-          <span className="font-display font-bold text-2xl text-[#006c49]">₹{totalExpenseSum}</span>
+          <span className="font-display font-bold text-2xl text-[#006c49]">₹{totalExpenseSum.toFixed(0)}</span>
         </div>
       </div>
 
@@ -155,6 +172,19 @@ export const ExpensesView: React.FC = () => {
             <Plus className="w-4 h-4 text-[#4648d4]" /> Log New Expense
           </h2>
 
+          {formErrors.form && (
+            <div className="bg-rose-50 border border-rose-200 text-rose-600 text-xs p-3 rounded-xl flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              <span>{formErrors.form}</span>
+            </div>
+          )}
+          {formStatus === 'success' && (
+            <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs p-3 rounded-xl flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+              <span>Expense saved successfully!</span>
+            </div>
+          )}
+
           <form onSubmit={handleAddExpense} className="space-y-4">
             <div>
               <label className="text-xs font-semibold text-[#464554] block mb-1">Category</label>
@@ -164,11 +194,10 @@ export const ExpensesView: React.FC = () => {
                 className="input-field cursor-pointer"
               >
                 {categories.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
+                  <option key={cat} value={cat}>{cat}</option>
                 ))}
               </select>
+              {formErrors.category && <p className="text-rose-500 text-[11px] mt-1">{formErrors.category}</p>}
             </div>
 
             <div>
@@ -178,9 +207,12 @@ export const ExpensesView: React.FC = () => {
                 placeholder="e.g. 150"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="input-field"
+                className={`input-field ${formErrors.amount ? 'border-rose-400' : ''}`}
+                min="0.01"
+                step="0.01"
                 required
               />
+              {formErrors.amount && <p className="text-rose-500 text-[11px] mt-1">{formErrors.amount}</p>}
             </div>
 
             <div>
@@ -191,6 +223,7 @@ export const ExpensesView: React.FC = () => {
                 onChange={(e) => setDate(e.target.value)}
                 className="input-field cursor-pointer"
               />
+              {formErrors.date && <p className="text-rose-500 text-[11px] mt-1">{formErrors.date}</p>}
             </div>
 
             <div>
@@ -201,6 +234,7 @@ export const ExpensesView: React.FC = () => {
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 className="input-field"
+                maxLength={200}
               />
             </div>
 
@@ -212,7 +246,7 @@ export const ExpensesView: React.FC = () => {
 
         {/* Expenses List & Controls */}
         <div className="lg:col-span-2 stitch-card p-6 bg-white space-y-5">
-          {/* Controls Bar: Search, Category Filter, Sort */}
+          {/* Controls Bar */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pb-3 border-b border-slate-100">
             <div className="relative">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
@@ -251,11 +285,10 @@ export const ExpensesView: React.FC = () => {
             </div>
           </div>
 
-          {/* List Content / Empty State / Loading */}
+          {/* List Content */}
           {isLoading ? (
             <p className="text-xs text-[#767586] text-center py-8">Loading expense records...</p>
           ) : expenses.length === 0 ? (
-            /* Professional Empty State */
             <div className="py-12 text-center space-y-3">
               <div className="w-12 h-12 rounded-2xl bg-[#eff4ff] text-[#4648d4] flex items-center justify-center mx-auto">
                 <Receipt className="w-6 h-6" />
@@ -302,23 +335,15 @@ export const ExpensesView: React.FC = () => {
                 ))}
               </div>
 
-              {/* Pagination Bar */}
+              {/* Pagination */}
               {totalPages > 1 && (
                 <div className="flex items-center justify-between pt-4 border-t border-slate-100 text-xs text-[#767586]">
                   <span>Page {page} of {totalPages}</span>
                   <div className="flex items-center gap-2">
-                    <button
-                      disabled={page === 1}
-                      onClick={() => setPage(page - 1)}
-                      className="btn-secondary py-1 px-3 disabled:opacity-40"
-                    >
+                    <button disabled={page === 1} onClick={() => setPage(page - 1)} className="btn-secondary py-1 px-3 disabled:opacity-40">
                       <ChevronLeft className="w-3.5 h-3.5" /> Prev
                     </button>
-                    <button
-                      disabled={page === totalPages}
-                      onClick={() => setPage(page + 1)}
-                      className="btn-secondary py-1 px-3 disabled:opacity-40"
-                    >
+                    <button disabled={page === totalPages} onClick={() => setPage(page + 1)} className="btn-secondary py-1 px-3 disabled:opacity-40">
                       Next <ChevronRight className="w-3.5 h-3.5" />
                     </button>
                   </div>
@@ -340,6 +365,12 @@ export const ExpensesView: React.FC = () => {
               </button>
             </div>
 
+            {editErrors.form && (
+              <div className="bg-rose-50 border border-rose-200 text-rose-600 text-xs p-3 rounded-xl">
+                {editErrors.form}
+              </div>
+            )}
+
             <form onSubmit={handleUpdateExpense} className="space-y-3">
               <div>
                 <label className="text-xs font-semibold text-[#464554] block mb-1">Category</label>
@@ -360,9 +391,10 @@ export const ExpensesView: React.FC = () => {
                   type="number"
                   value={editingExpense.amount}
                   onChange={(e) => setEditingExpense({ ...editingExpense, amount: parseFloat(e.target.value) || 0 })}
-                  className="input-field text-xs"
-                  required
+                  className={`input-field text-xs ${editErrors.amount ? 'border-rose-400' : ''}`}
+                  min="0.01" step="0.01" required
                 />
+                {editErrors.amount && <p className="text-rose-500 text-[11px] mt-1">{editErrors.amount}</p>}
               </div>
 
               <div>

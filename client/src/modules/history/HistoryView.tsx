@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { History, Lock, FileText, CheckCircle2, Calendar } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
+import { api } from '../../lib/api';
 
 interface HistorySnapshot {
   id: string;
@@ -23,11 +24,8 @@ export const HistoryView: React.FC = () => {
       if (!user?.id) return;
       setIsLoading(true);
       try {
-        const res = await fetch(`/api/history?userId=${user.id}`);
-        if (res.ok) {
-          const data = await res.json();
-          setHistoryList(data.history || []);
-        }
+        const data = await api.get('/history');
+        setHistoryList(data.history || []);
       } catch (err) {
         console.error('Failed to fetch history:', err);
       } finally {

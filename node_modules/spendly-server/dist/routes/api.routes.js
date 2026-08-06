@@ -1,205 +1,335 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
+const multer_1 = __importDefault(require("multer"));
 const supabase_js_1 = require("../lib/supabase.js");
+const spendly_shared_1 = require("spendly-shared");
 const router = (0, express_1.Router)();
-// Helper: Get active workspace
-async function getOrCreateWorkspace() {
-    let { data: ws } = await supabase_js_1.supabase.from('Workspace').select('*').eq('code', 'SPENDLY_HOSTEL').maybeSingle();
-    if (!ws) {
-        const { data: newWs } = await supabase_js_1.supabase.from('Workspace').insert([{
-                name: 'Spendly Hostel Workspace',
-                code: 'SPENDLY_HOSTEL'
-            }]).select().single();
-        ws = newWs;
-        if (ws) {
-            await supabase_js_1.supabase.from('MealPrice').insert([{
-                    workspaceId: ws.id,
-                    halfPrice: 40,
-                    fullPrice: 60
-                }]);
+// ─── Multer: In-memory storage for file uploads ───────────────────────────────
+const upload = (0, multer_1.default)({
+    storage: multer_1.default.memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB max
+    fileFilter: (_req, file, cb) => {
+        const allowed = ['image/png', 'image/jpeg', 'image/webp'];
+        if (allowed.includes(file.mimetype)) {
+            cb(null, true);
         }
+        else {
+            cb(new Error('Only PNG, JPEG, and WEBP images are allowed.'));
+        }
+    },
+});
+// ─── Zod Validation Helper ────────────────────────────────────────────────────
+function validate(schema) {
+    return (req, res, next) => {
+        const result = schema.safeParse(req.body);
+        if (!result.success) {
+            return res.status(400).json({
+                error: 'Validation failed',
+                details: result.error.flatten().fieldErrors,
+            });
+        }
+        req.body = result.data;
+        next();
+    };
+}
+// ─── JWT Auth Middleware ──────────────────────────────────────────────────────
+async function requireAuth(req, res, next) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: 'Missing authentication token.' });
+    }
+    const token = authHeader.substring(7);
+    const { data, error } = await supabase_js_1.supabase.auth.getUser(token);
+    if (error || !data.user) {
+        return res.status(401).json({ error: 'Invalid or expired token.' });
+    }
+    req.authUser = data.user;
+    next();
+}
+// ─── Helper: Get or Create Default Workspace ─────────────────────────────────
+async function getOrCreateWorkspace() {
+    let { data: ws } = await supabase_js_1.supabaseAdmin
+        .from('Workspace')
+        .select('*')
+        .eq('code', 'SPENDLY_HOSTEL')
+        .maybeSingle();
+    if (!ws) {
+        const { data: newWs, error } = await supabase_js_1.supabaseAdmin
+            .from('Workspace')
+            .insert([{ name: 'Spendly Main Workspace', code: 'SPENDLY_HOSTEL' }])
+            .select()
+            .single();
+        if (error || !newWs)
+            throw new Error('Failed to create workspace: ' + error?.message);
+        ws = newWs;
+        // Seed default meal prices
+        await supabase_js_1.supabaseAdmin.from('MealPrice').insert([{
+                workspaceId: ws.id,
+                halfPrice: 40,
+                fullPrice: 60
+            }]);
     }
     return ws;
 }
-// --- AUTH ENDPOINTS ---
-// Registration: ONLY Student registration. No role or workspace input.
-router.post('/auth/register', async (req, res) => {
+// ─── Helper: Get User's Workspace ────────────────────────────────────────────
+async function getUserWorkspace(userId) {
+    const { data } = await supabase_js_1.supabaseAdmin
+        .from('WorkspaceMember')
+        .select('workspace:Workspace(*)')
+        .eq('userId', userId)
+        .maybeSingle();
+    return data?.workspace || null;
+}
+// ─── AUTH ENDPOINTS ───────────────────────────────────────────────────────────
+// POST /api/auth/register
+router.post('/auth/register', validate(spendly_shared_1.RegisterSchema), async (req, res) => {
     try {
-        const { fullName, email, password } = req.body;
-        if (!fullName || !email || !password) {
-            return res.status(400).json({ error: 'Full name, email, and password are required.' });
+        const { fullName, email, password, phone } = req.body;
+        // Check if email already registered in our DB
+        const { data: existing } = await supabase_js_1.supabaseAdmin
+            .from('User')
+            .select('id')
+            .eq('email', email)
+            .maybeSingle();
+        if (existing) {
+            return res.status(400).json({ error: 'An account with this email already exists.' });
         }
-        // 1. Sign up with Supabase Auth
-        const { data: authData, error: authError } = await supabase_js_1.supabase.auth.signUp({
+        // Create Supabase Auth user
+        const { data: authData, error: authError } = await supabase_js_1.supabaseAdmin.auth.admin.createUser({
             email,
             password,
-            options: {
-                data: { fullName, role: 'STUDENT' }
-            }
+            email_confirm: true, // Auto-confirm for hostel use case
+            user_metadata: { fullName, role: 'STUDENT' }
         });
-        if (authError) {
-            return res.status(400).json({ error: authError.message });
+        if (authError || !authData.user) {
+            return res.status(400).json({ error: authError?.message || 'Registration failed.' });
         }
-        const userId = authData.user?.id || `user_${Date.now()}`;
-        const ws = await getOrCreateWorkspace();
-        // 2. Insert into User table (Role ALWAYS forced to STUDENT)
-        await supabase_js_1.supabase.from('User').upsert([{
+        const userId = authData.user.id;
+        // Insert user record
+        const { error: userError } = await supabase_js_1.supabaseAdmin.from('User').insert([{
                 id: userId,
                 email,
                 fullName,
+                phone: phone || null,
                 role: 'STUDENT'
-            }], { onConflict: 'id' });
-        // 3. Add to WorkspaceMember
+            }]);
+        if (userError) {
+            console.error('[Register] User insert failed:', userError.message);
+        }
+        // Add to default workspace
+        const ws = await getOrCreateWorkspace();
         if (ws) {
-            await supabase_js_1.supabase.from('WorkspaceMember').upsert([{
+            await supabase_js_1.supabaseAdmin.from('WorkspaceMember').upsert([{
                     workspaceId: ws.id,
-                    userId: userId,
+                    userId,
                     role: 'STUDENT'
                 }], { onConflict: 'workspaceId,userId' });
         }
-        // Do NOT auto login. Return success response.
-        res.json({
+        return res.json({
             success: true,
-            message: 'Account registered successfully. Please sign in to continue.'
+            message: 'Account created successfully. Please sign in.'
         });
     }
     catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('[Register Error]:', err.message);
+        return res.status(500).json({ error: err.message || 'Registration failed.' });
     }
 });
-// Login: Authenticate and return role-based session
-router.post('/auth/login', async (req, res) => {
+// POST /api/auth/login
+router.post('/auth/login', validate(spendly_shared_1.LoginSchema), async (req, res) => {
     try {
         const { email, password } = req.body;
-        if (!email || !password) {
-            return res.status(400).json({ error: 'Email and password are required.' });
+        const { data: authData, error: authError } = await supabase_js_1.supabase.auth.signInWithPassword({ email, password });
+        if (authError || !authData.user) {
+            return res.status(401).json({ error: 'Invalid email or password.' });
         }
-        // Attempt Supabase Auth login
-        const { data: authData, error: authError } = await supabase_js_1.supabase.auth.signInWithPassword({
-            email,
-            password
-        });
-        let dbUser = null;
-        let userId = authData?.user?.id;
-        if (userId) {
-            const { data } = await supabase_js_1.supabase.from('User').select('*').eq('id', userId).maybeSingle();
-            dbUser = data;
-        }
-        // Fallback search by email if auth user is missing in DB
+        const userId = authData.user.id;
+        // Fetch DB user record
+        let { data: dbUser } = await supabase_js_1.supabaseAdmin.from('User').select('*').eq('id', userId).maybeSingle();
+        // Fallback: create user record if missing (e.g., admin seeded via Supabase dashboard)
         if (!dbUser) {
-            const { data } = await supabase_js_1.supabase.from('User').select('*').eq('email', email).maybeSingle();
-            dbUser = data;
+            const { data: inserted } = await supabase_js_1.supabaseAdmin.from('User').upsert([{
+                    id: userId,
+                    email,
+                    fullName: authData.user.user_metadata?.fullName || email.split('@')[0],
+                    role: authData.user.user_metadata?.role || 'STUDENT'
+                }], { onConflict: 'id' }).select().single();
+            dbUser = inserted;
         }
         if (!dbUser) {
-            return res.status(401).json({ error: authError?.message || 'Invalid email or password.' });
+            return res.status(500).json({ error: 'User profile not found.' });
         }
+        // Get workspace
         const ws = await getOrCreateWorkspace();
-        res.json({
+        // Ensure user is in workspace
+        if (ws) {
+            await supabase_js_1.supabaseAdmin.from('WorkspaceMember').upsert([{
+                    workspaceId: ws.id,
+                    userId,
+                    role: dbUser.role
+                }], { onConflict: 'workspaceId,userId' });
+        }
+        return res.json({
             success: true,
             user: {
                 id: dbUser.id,
                 email: dbUser.email,
                 fullName: dbUser.fullName,
-                role: dbUser.role || 'STUDENT',
-                workspaceId: ws?.id
+                phone: dbUser.phone,
+                avatarUrl: dbUser.avatarUrl,
+                role: dbUser.role,
+                workspaceId: ws?.id || null,
+                workspaceName: ws?.name || null,
             },
-            session: authData?.session || null
+            session: authData.session,
+            accessToken: authData.session?.access_token || null,
         });
     }
     catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('[Login Error]:', err.message);
+        return res.status(500).json({ error: err.message || 'Login failed.' });
     }
 });
-// --- STUDENT DASHBOARD METRICS ---
-router.get('/dashboard/summary', async (req, res) => {
+// GET /api/workspaces/mine
+router.get('/workspaces/mine', requireAuth, async (req, res) => {
     try {
-        const userId = req.query.userId || '';
-        const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
-        if (!userId) {
-            return res.json({
-                currentMonthTotal: 0,
-                remainingBalance: 0,
-                mealsThisMonth: 0,
-                dailyExpenses: 0,
-                totalPayments: 0,
-                missingEntries: 0
-            });
+        const authUser = req.authUser;
+        const ws = await getUserWorkspace(authUser.id);
+        if (!ws) {
+            return res.status(404).json({ error: 'No workspace found for this user.' });
         }
-        // Fetch user's meals for current month
-        const { data: meals } = await supabase_js_1.supabase
-            .from('Meal')
-            .select('totalCost, date')
-            .eq('userId', userId);
-        const monthMeals = (meals || []).filter(m => String(m.date).startsWith(currentMonth));
+        return res.json({ workspace: ws });
+    }
+    catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
+});
+// GET /api/user/profile
+router.get('/user/profile', requireAuth, async (req, res) => {
+    try {
+        const authUser = req.authUser;
+        const { data: user } = await supabase_js_1.supabaseAdmin.from('User').select('*').eq('id', authUser.id).single();
+        if (!user)
+            return res.status(404).json({ error: 'User not found.' });
+        const ws = await getUserWorkspace(authUser.id);
+        return res.json({
+            user: {
+                ...user,
+                workspaceId: ws?.id || null,
+                workspaceName: ws?.name || null,
+            }
+        });
+    }
+    catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
+});
+// PATCH /api/user/profile
+router.patch('/user/profile', requireAuth, validate(spendly_shared_1.UpdateProfileSchema), async (req, res) => {
+    try {
+        const authUser = req.authUser;
+        const updates = {};
+        if (req.body.fullName !== undefined)
+            updates.fullName = req.body.fullName;
+        if (req.body.phone !== undefined)
+            updates.phone = req.body.phone;
+        if (req.body.avatarUrl !== undefined)
+            updates.avatarUrl = req.body.avatarUrl;
+        const { data, error } = await supabase_js_1.supabaseAdmin
+            .from('User')
+            .update(updates)
+            .eq('id', authUser.id)
+            .select()
+            .single();
+        if (error)
+            return res.status(400).json({ error: error.message });
+        return res.json({ success: true, user: data });
+    }
+    catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
+});
+// ─── DASHBOARD ────────────────────────────────────────────────────────────────
+router.get('/dashboard/summary', requireAuth, async (req, res) => {
+    try {
+        const authUser = req.authUser;
+        const userId = authUser.id;
+        const currentMonth = new Date().toISOString().slice(0, 7);
+        const [mealsRes, expensesRes, paymentsRes] = await Promise.all([
+            supabase_js_1.supabaseAdmin.from('Meal').select('totalCost, date').eq('userId', userId),
+            supabase_js_1.supabaseAdmin.from('Expense').select('amount, date').eq('userId', userId),
+            supabase_js_1.supabaseAdmin.from('Payment').select('amount, status').eq('userId', userId).eq('status', 'APPROVED'),
+        ]);
+        const monthMeals = (mealsRes.data || []).filter(m => String(m.date).startsWith(currentMonth));
         const mealTotal = monthMeals.reduce((acc, m) => acc + (m.totalCost || 0), 0);
         const mealsCount = monthMeals.filter(m => m.totalCost > 0).length;
-        // Fetch user's expenses for current month
-        const { data: expenses } = await supabase_js_1.supabase
-            .from('Expense')
-            .select('amount, date')
-            .eq('userId', userId);
-        const monthExpenses = (expenses || []).filter(e => String(e.date).startsWith(currentMonth));
+        const monthExpenses = (expensesRes.data || []).filter(e => String(e.date).startsWith(currentMonth));
         const expenseTotal = monthExpenses.reduce((acc, e) => acc + (e.amount || 0), 0);
-        // Fetch user's approved payments
-        const { data: payments } = await supabase_js_1.supabase
-            .from('Payment')
-            .select('amount, status')
-            .eq('userId', userId)
-            .eq('status', 'APPROVED');
-        const totalPayments = (payments || []).reduce((acc, p) => acc + (p.amount || 0), 0);
+        const totalPayments = (paymentsRes.data || []).reduce((acc, p) => acc + (p.amount || 0), 0);
         const currentMonthTotal = mealTotal + expenseTotal;
         const remainingBalance = Math.max(0, currentMonthTotal - totalPayments);
-        // Calculate missing entries (unrecorded past days in current month)
         const todayNum = new Date().getDate();
-        const recordedDays = new Set(monthMeals.map(m => new Date(m.date).getDate()));
+        const recordedDays = new Set(monthMeals.map(m => {
+            const d = new Date(m.date);
+            return d.getUTCDate();
+        }));
         let missingEntries = 0;
         for (let day = 1; day < todayNum; day++) {
             if (!recordedDays.has(day))
                 missingEntries++;
         }
-        res.json({
+        return res.json({
             currentMonthTotal,
             remainingBalance,
             mealsThisMonth: mealsCount,
             dailyExpenses: expenseTotal,
             totalPayments,
-            missingEntries
+            missingEntries,
         });
     }
     catch (err) {
-        res.status(500).json({ error: err.message });
+        return res.status(500).json({ error: err.message });
     }
 });
-// --- MEALS (TIFFIN) ENDPOINTS ---
-router.get('/meals/today', async (req, res) => {
+// ─── MEALS ENDPOINTS ──────────────────────────────────────────────────────────
+// GET /api/meals/today
+router.get('/meals/today', requireAuth, async (req, res) => {
     try {
-        const userId = req.query.userId || '';
+        const authUser = req.authUser;
+        const userId = authUser.id;
         const today = new Date().toISOString().split('T')[0];
-        if (!userId) {
-            return res.json({ date: today, lunch: 'SKIP', dinner: 'SKIP', lunchCost: 0, dinnerCost: 0, totalCost: 0 });
-        }
-        const { data: meal } = await supabase_js_1.supabase
+        const { data: meal } = await supabase_js_1.supabaseAdmin
             .from('Meal')
             .select('*')
             .eq('userId', userId)
             .eq('date', today)
             .maybeSingle();
-        if (!meal) {
-            return res.json({ date: today, lunch: 'SKIP', dinner: 'SKIP', lunchCost: 0, dinnerCost: 0, totalCost: 0 });
-        }
-        res.json(meal);
+        return res.json(meal || {
+            date: today,
+            lunch: 'SKIP',
+            dinner: 'SKIP',
+            lunchCost: 0,
+            dinnerCost: 0,
+            totalCost: 0,
+        });
     }
     catch (err) {
-        res.status(500).json({ error: err.message });
+        return res.status(500).json({ error: err.message });
     }
 });
-router.post('/meals', async (req, res) => {
+// POST /api/meals
+router.post('/meals', requireAuth, validate(spendly_shared_1.RecordMealSchema), async (req, res) => {
     try {
-        const { userId, date, lunch, dinner } = req.body;
+        const authUser = req.authUser;
+        const userId = authUser.id;
+        const { date, lunch, dinner } = req.body;
         const ws = await getOrCreateWorkspace();
-        // Fetch active meal prices for workspace
-        const { data: priceObj } = await supabase_js_1.supabase
+        // Get latest meal price
+        const { data: priceObj } = await supabase_js_1.supabaseAdmin
             .from('MealPrice')
             .select('*')
             .eq('workspaceId', ws.id)
@@ -211,336 +341,585 @@ router.post('/meals', async (req, res) => {
         const lunchCost = lunch === 'FULL' ? fullPrice : lunch === 'HALF' ? halfPrice : 0;
         const dinnerCost = dinner === 'FULL' ? fullPrice : dinner === 'HALF' ? halfPrice : 0;
         const totalCost = lunchCost + dinnerCost;
-        const targetDate = date || new Date().toISOString().split('T')[0];
-        const { data: updatedMeal, error } = await supabase_js_1.supabase
+        const { data: updatedMeal, error } = await supabase_js_1.supabaseAdmin
             .from('Meal')
             .upsert([{
                 workspaceId: ws.id,
                 userId,
-                date: targetDate,
-                lunch: lunch || 'SKIP',
-                dinner: dinner || 'SKIP',
+                date,
+                lunch,
+                dinner,
                 lunchCost,
                 dinnerCost,
                 totalCost,
-                updatedAt: new Date().toISOString()
+                updatedAt: new Date().toISOString(),
             }], { onConflict: 'workspaceId,userId,date' })
             .select()
             .single();
         if (error)
             return res.status(400).json({ error: error.message });
-        res.json({ success: true, meal: updatedMeal });
+        return res.json({ success: true, meal: updatedMeal });
     }
     catch (err) {
-        res.status(500).json({ error: err.message });
+        return res.status(500).json({ error: err.message });
     }
 });
-router.get('/meals/month', async (req, res) => {
+// GET /api/meals/month
+router.get('/meals/month', requireAuth, async (req, res) => {
     try {
-        const userId = req.query.userId || '';
+        const authUser = req.authUser;
+        const userId = authUser.id;
         const month = req.query.month || new Date().toISOString().slice(0, 7);
-        const { data: meals } = await supabase_js_1.supabase
+        const { data: meals } = await supabase_js_1.supabaseAdmin
             .from('Meal')
             .select('*')
-            .eq('userId', userId);
-        const monthMeals = (meals || []).filter(m => String(m.date).startsWith(month));
-        res.json({ meals: monthMeals });
+            .eq('userId', userId)
+            .like('date', `${month}%`);
+        return res.json({ meals: meals || [] });
     }
     catch (err) {
-        res.status(500).json({ error: err.message });
+        return res.status(500).json({ error: err.message });
     }
 });
-// --- DAILY EXPENSES ENDPOINTS ---
-router.get('/expenses', async (req, res) => {
+// GET /api/meals/missing
+router.get('/meals/missing', requireAuth, async (req, res) => {
     try {
-        const userId = req.query.userId || '';
+        const authUser = req.authUser;
+        const userId = authUser.id;
+        const month = req.query.month || new Date().toISOString().slice(0, 7);
+        const { data: meals } = await supabase_js_1.supabaseAdmin
+            .from('Meal')
+            .select('date')
+            .eq('userId', userId)
+            .like('date', `${month}%`);
+        const recordedDates = new Set((meals || []).map(m => m.date));
+        const today = new Date();
+        const year = parseInt(month.split('-')[0]);
+        const monthNum = parseInt(month.split('-')[1]);
+        const daysInMonth = new Date(year, monthNum, 0).getDate();
+        const currentDay = today.getFullYear() === year && today.getMonth() + 1 === monthNum
+            ? today.getDate()
+            : daysInMonth;
+        const missing = [];
+        for (let d = 1; d < currentDay; d++) {
+            const dateStr = `${month}-${String(d).padStart(2, '0')}`;
+            if (!recordedDates.has(dateStr))
+                missing.push(dateStr);
+        }
+        return res.json({ missing });
+    }
+    catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
+});
+// ─── EXPENSES ENDPOINTS ───────────────────────────────────────────────────────
+// GET /api/expenses
+router.get('/expenses', requireAuth, async (req, res) => {
+    try {
+        const authUser = req.authUser;
+        const userId = authUser.id;
         const search = (req.query.search || '').toLowerCase();
         const category = req.query.category || 'ALL';
-        const sortBy = req.query.sortBy || 'latest';
-        let { data: expenses } = await supabase_js_1.supabase
-            .from('Expense')
-            .select('*')
-            .eq('userId', userId);
+        const sortBy = req.query.sortBy || 'date_desc';
+        const month = req.query.month;
+        let query = supabase_js_1.supabaseAdmin.from('Expense').select('*').eq('userId', userId);
+        if (month)
+            query = query.like('date', `${month}%`);
+        const { data: expenses, error } = await query;
+        if (error)
+            return res.status(400).json({ error: error.message });
         let list = expenses || [];
-        if (category !== 'ALL') {
+        if (category !== 'ALL')
             list = list.filter(e => e.category === category);
-        }
-        if (search) {
-            list = list.filter(e => (e.note || '').toLowerCase().includes(search) || (e.category || '').toLowerCase().includes(search));
-        }
+        if (search)
+            list = list.filter(e => (e.note || '').toLowerCase().includes(search) ||
+                (e.category || '').toLowerCase().includes(search));
         if (sortBy === 'amount_desc')
             list.sort((a, b) => b.amount - a.amount);
         else if (sortBy === 'amount_asc')
             list.sort((a, b) => a.amount - b.amount);
         else
             list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        res.json({ expenses: list });
+        return res.json({ expenses: list });
     }
     catch (err) {
-        res.status(500).json({ error: err.message });
+        return res.status(500).json({ error: err.message });
     }
 });
-router.post('/expenses', async (req, res) => {
+// POST /api/expenses
+router.post('/expenses', requireAuth, validate(spendly_shared_1.CreateExpenseSchema), async (req, res) => {
     try {
-        const { userId, category, amount, note, date } = req.body;
+        const authUser = req.authUser;
+        const userId = authUser.id;
+        const { category, amount, note, date } = req.body;
         const ws = await getOrCreateWorkspace();
-        const { data, error } = await supabase_js_1.supabase
+        const { data, error } = await supabase_js_1.supabaseAdmin
             .from('Expense')
-            .insert([{
-                workspaceId: ws.id,
-                userId,
-                category,
-                amount: parseFloat(amount),
-                note,
-                date: date || new Date().toISOString().split('T')[0]
-            }])
+            .insert([{ workspaceId: ws.id, userId, category, amount, note: note || null, date }])
             .select()
             .single();
         if (error)
             return res.status(400).json({ error: error.message });
-        res.json({ success: true, expense: data });
+        return res.status(201).json({ success: true, expense: data });
     }
     catch (err) {
-        res.status(500).json({ error: err.message });
+        return res.status(500).json({ error: err.message });
     }
 });
-router.put('/expenses/:id', async (req, res) => {
+// PUT /api/expenses/:id
+router.put('/expenses/:id', requireAuth, validate(spendly_shared_1.UpdateExpenseSchema), async (req, res) => {
     try {
+        const authUser = req.authUser;
         const { category, amount, note, date } = req.body;
-        const { data, error } = await supabase_js_1.supabase
+        // Verify ownership
+        const { data: existing } = await supabase_js_1.supabaseAdmin
             .from('Expense')
-            .update({ category, amount: parseFloat(amount), note, date })
+            .select('userId')
+            .eq('id', req.params.id)
+            .single();
+        if (!existing || existing.userId !== authUser.id) {
+            return res.status(403).json({ error: 'Access denied or expense not found.' });
+        }
+        const { data, error } = await supabase_js_1.supabaseAdmin
+            .from('Expense')
+            .update({ category, amount, note: note || null, date })
             .eq('id', req.params.id)
             .select()
             .single();
         if (error)
             return res.status(400).json({ error: error.message });
-        res.json({ success: true, expense: data });
+        return res.json({ success: true, expense: data });
     }
     catch (err) {
-        res.status(500).json({ error: err.message });
+        return res.status(500).json({ error: err.message });
     }
 });
-router.delete('/expenses/:id', async (req, res) => {
+// DELETE /api/expenses/:id
+router.delete('/expenses/:id', requireAuth, async (req, res) => {
     try {
-        await supabase_js_1.supabase.from('Expense').delete().eq('id', req.params.id);
-        res.json({ success: true, id: req.params.id });
+        const authUser = req.authUser;
+        // Verify ownership
+        const { data: existing } = await supabase_js_1.supabaseAdmin
+            .from('Expense')
+            .select('userId')
+            .eq('id', req.params.id)
+            .single();
+        if (!existing || existing.userId !== authUser.id) {
+            return res.status(403).json({ error: 'Access denied or expense not found.' });
+        }
+        const { error } = await supabase_js_1.supabaseAdmin.from('Expense').delete().eq('id', req.params.id);
+        if (error)
+            return res.status(400).json({ error: error.message });
+        return res.json({ success: true, id: req.params.id });
     }
     catch (err) {
-        res.status(500).json({ error: err.message });
+        return res.status(500).json({ error: err.message });
     }
 });
-// --- PAYMENTS ENDPOINTS ---
-router.get('/payments', async (req, res) => {
+// ─── PAYMENTS ENDPOINTS ───────────────────────────────────────────────────────
+// GET /api/payments
+router.get('/payments', requireAuth, async (req, res) => {
     try {
-        const userId = req.query.userId || '';
-        const { data: payments } = await supabase_js_1.supabase
+        const authUser = req.authUser;
+        const { data: payments, error } = await supabase_js_1.supabaseAdmin
             .from('Payment')
             .select('*')
-            .eq('userId', userId)
+            .eq('userId', authUser.id)
             .order('createdAt', { ascending: false });
-        res.json({ payments: payments || [] });
+        if (error)
+            return res.status(400).json({ error: error.message });
+        return res.json({ payments: payments || [] });
     }
     catch (err) {
-        res.status(500).json({ error: err.message });
+        return res.status(500).json({ error: err.message });
     }
 });
-router.post('/payments', async (req, res) => {
+// POST /api/payments
+router.post('/payments', requireAuth, validate(spendly_shared_1.SubmitPaymentSchema), async (req, res) => {
     try {
-        const { userId, type, amount, note, date, screenshotPath } = req.body;
+        const authUser = req.authUser;
+        const { type, amount, note, date, screenshotPath } = req.body;
         const ws = await getOrCreateWorkspace();
-        const { data, error } = await supabase_js_1.supabase
+        const { data, error } = await supabase_js_1.supabaseAdmin
             .from('Payment')
             .insert([{
                 workspaceId: ws.id,
-                userId,
-                type: type || 'UPI',
-                amount: parseFloat(amount),
-                note,
-                date: date || new Date().toISOString().split('T')[0],
+                userId: authUser.id,
+                type,
+                amount,
+                note: note || null,
+                date,
                 screenshotPath: screenshotPath || null,
-                status: 'PENDING'
+                status: 'PENDING',
             }])
             .select()
             .single();
         if (error)
             return res.status(400).json({ error: error.message });
-        res.json({ success: true, payment: data });
+        return res.status(201).json({ success: true, payment: data });
     }
     catch (err) {
-        res.status(500).json({ error: err.message });
+        return res.status(500).json({ error: err.message });
     }
 });
-router.delete('/payments/:id', async (req, res) => {
+// DELETE /api/payments/:id
+router.delete('/payments/:id', requireAuth, async (req, res) => {
     try {
-        await supabase_js_1.supabase.from('Payment').delete().eq('id', req.params.id);
-        res.json({ success: true, id: req.params.id });
+        const authUser = req.authUser;
+        // Verify ownership
+        const { data: existing } = await supabase_js_1.supabaseAdmin
+            .from('Payment')
+            .select('userId, status')
+            .eq('id', req.params.id)
+            .single();
+        if (!existing || existing.userId !== authUser.id) {
+            return res.status(403).json({ error: 'Access denied or payment not found.' });
+        }
+        if (existing.status === 'APPROVED') {
+            return res.status(400).json({ error: 'Cannot delete an approved payment.' });
+        }
+        const { error } = await supabase_js_1.supabaseAdmin.from('Payment').delete().eq('id', req.params.id);
+        if (error)
+            return res.status(400).json({ error: error.message });
+        return res.json({ success: true, id: req.params.id });
     }
     catch (err) {
-        res.status(500).json({ error: err.message });
+        return res.status(500).json({ error: err.message });
     }
 });
-// --- ADMIN ENDPOINTS ---
-router.get('/admin/members', async (req, res) => {
+// POST /api/payments/upload-proof — Supabase Storage upload
+router.post('/payments/upload-proof', requireAuth, upload.single('screenshot'), async (req, res) => {
     try {
-        const { data: members } = await supabase_js_1.supabase
-            .from('User')
-            .select('*')
-            .order('createdAt', { ascending: false });
-        res.json({ members: members || [] });
+        const authUser = req.authUser;
+        const file = req.file;
+        if (!file) {
+            return res.status(400).json({ error: 'No screenshot file provided.' });
+        }
+        const ext = file.mimetype === 'image/png' ? 'png' : file.mimetype === 'image/webp' ? 'webp' : 'jpg';
+        const filePath = `${authUser.id}/${Date.now()}.${ext}`;
+        const { data, error } = await supabase_js_1.supabaseAdmin.storage
+            .from('payment-proofs')
+            .upload(filePath, file.buffer, {
+            contentType: file.mimetype,
+            upsert: false,
+        });
+        if (error)
+            return res.status(400).json({ error: error.message });
+        return res.json({ success: true, path: data.path });
     }
     catch (err) {
-        res.status(500).json({ error: err.message });
+        return res.status(500).json({ error: err.message });
     }
 });
-router.patch('/admin/members/:id/role', async (req, res) => {
+// GET /api/payments/:id/proof-url — Get signed URL for viewing screenshot
+router.get('/payments/:id/proof-url', requireAuth, async (req, res) => {
+    try {
+        const authUser = req.authUser;
+        const dbUser = await supabase_js_1.supabaseAdmin.from('User').select('role').eq('id', authUser.id).single();
+        const role = dbUser.data?.role;
+        const { data: payment } = await supabase_js_1.supabaseAdmin
+            .from('Payment')
+            .select('userId, screenshotPath')
+            .eq('id', req.params.id)
+            .single();
+        if (!payment)
+            return res.status(404).json({ error: 'Payment not found.' });
+        if (payment.userId !== authUser.id && !['ADMIN', 'SUPER_ADMIN'].includes(role)) {
+            return res.status(403).json({ error: 'Access denied.' });
+        }
+        if (!payment.screenshotPath) {
+            return res.status(404).json({ error: 'No screenshot attached to this payment.' });
+        }
+        const { data, error } = await supabase_js_1.supabaseAdmin.storage
+            .from('payment-proofs')
+            .createSignedUrl(payment.screenshotPath, 3600); // 1-hour signed URL
+        if (error)
+            return res.status(400).json({ error: error.message });
+        return res.json({ signedUrl: data.signedUrl });
+    }
+    catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
+});
+// ─── ADMIN ENDPOINTS ──────────────────────────────────────────────────────────
+// Middleware: require admin role
+async function requireAdmin(req, res, next) {
+    const authUser = req.authUser;
+    if (!authUser)
+        return res.status(401).json({ error: 'Not authenticated.' });
+    const { data: user } = await supabase_js_1.supabaseAdmin.from('User').select('role').eq('id', authUser.id).single();
+    if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
+        return res.status(403).json({ error: 'Admin access required.' });
+    }
+    req.dbUser = user;
+    next();
+}
+// GET /api/admin/members
+router.get('/admin/members', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const ws = await getOrCreateWorkspace();
+        const { data: members, error } = await supabase_js_1.supabaseAdmin
+            .from('WorkspaceMember')
+            .select('*, user:User(*)')
+            .eq('workspaceId', ws.id)
+            .order('joinedAt', { ascending: false });
+        if (error)
+            return res.status(400).json({ error: error.message });
+        const result = (members || []).map((m) => ({
+            id: m.user.id,
+            email: m.user.email,
+            fullName: m.user.fullName,
+            phone: m.user.phone,
+            role: m.role,
+            joinedAt: m.joinedAt,
+            createdAt: m.user.createdAt,
+        }));
+        return res.json({ members: result });
+    }
+    catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
+});
+// PATCH /api/admin/members/:id/role
+router.patch('/admin/members/:id/role', requireAuth, requireAdmin, validate(spendly_shared_1.UpdateMemberRoleSchema), async (req, res) => {
     try {
         const { role } = req.body;
-        const { data, error } = await supabase_js_1.supabase
+        const targetUserId = req.params.id;
+        const actorUser = req.dbUser;
+        // Super Admin can promote to any role; Admin can only set STUDENT
+        if (actorUser.role === 'ADMIN' && role !== 'STUDENT') {
+            return res.status(403).json({ error: 'Admins can only demote to Student.' });
+        }
+        const { data, error } = await supabase_js_1.supabaseAdmin
             .from('User')
             .update({ role })
-            .eq('id', req.params.id)
+            .eq('id', targetUserId)
             .select()
             .single();
         if (error)
             return res.status(400).json({ error: error.message });
-        res.json({ success: true, user: data });
+        // Also update WorkspaceMember role
+        const ws = await getOrCreateWorkspace();
+        await supabase_js_1.supabaseAdmin
+            .from('WorkspaceMember')
+            .update({ role })
+            .eq('userId', targetUserId)
+            .eq('workspaceId', ws.id);
+        return res.json({ success: true, user: data });
     }
     catch (err) {
-        res.status(500).json({ error: err.message });
+        return res.status(500).json({ error: err.message });
     }
 });
-router.get('/admin/pending-payments', async (req, res) => {
-    try {
-        const { data: pending } = await supabase_js_1.supabase
-            .from('Payment')
-            .select('*')
-            .eq('status', 'PENDING')
-            .order('createdAt', { ascending: false });
-        res.json({ pendingPayments: pending || [] });
-    }
-    catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-router.patch('/admin/payments/:id/status', async (req, res) => {
-    try {
-        const { status, verifiedBy } = req.body;
-        const { data, error } = await supabase_js_1.supabase
-            .from('Payment')
-            .update({ status, verifiedBy })
-            .eq('id', req.params.id)
-            .select()
-            .single();
-        if (error)
-            return res.status(400).json({ error: error.message });
-        res.json({ success: true, payment: data });
-    }
-    catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-router.get('/admin/prices', async (req, res) => {
+// GET /api/admin/pending-payments
+router.get('/admin/pending-payments', requireAuth, requireAdmin, async (req, res) => {
     try {
         const ws = await getOrCreateWorkspace();
-        const { data: priceObj } = await supabase_js_1.supabase
+        const { data: pending, error } = await supabase_js_1.supabaseAdmin
+            .from('Payment')
+            .select('*, user:User(fullName, email)')
+            .eq('workspaceId', ws.id)
+            .eq('status', 'PENDING')
+            .order('createdAt', { ascending: false });
+        if (error)
+            return res.status(400).json({ error: error.message });
+        return res.json({ pendingPayments: pending || [] });
+    }
+    catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
+});
+// PATCH /api/admin/payments/:id/status
+router.patch('/admin/payments/:id/status', requireAuth, requireAdmin, validate(spendly_shared_1.VerifyPaymentSchema), async (req, res) => {
+    try {
+        const authUser = req.authUser;
+        const { status, verifiedBy } = req.body;
+        const { data, error } = await supabase_js_1.supabaseAdmin
+            .from('Payment')
+            .update({ status, verifiedBy: verifiedBy || authUser.id })
+            .eq('id', req.params.id)
+            .select()
+            .single();
+        if (error)
+            return res.status(400).json({ error: error.message });
+        return res.json({ success: true, payment: data });
+    }
+    catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
+});
+// GET /api/admin/prices
+router.get('/admin/prices', async (_req, res) => {
+    try {
+        const ws = await getOrCreateWorkspace();
+        const { data: priceObj } = await supabase_js_1.supabaseAdmin
             .from('MealPrice')
             .select('*')
             .eq('workspaceId', ws.id)
             .order('effectiveFrom', { ascending: false })
             .limit(1)
             .maybeSingle();
-        res.json({
+        return res.json({
             halfPrice: priceObj?.halfPrice ?? 40,
-            fullPrice: priceObj?.fullPrice ?? 60
+            fullPrice: priceObj?.fullPrice ?? 60,
         });
     }
     catch (err) {
-        res.status(500).json({ error: err.message });
+        return res.status(500).json({ error: err.message });
     }
 });
-router.post('/admin/prices', async (req, res) => {
+// POST /api/admin/prices
+router.post('/admin/prices', requireAuth, requireAdmin, validate(spendly_shared_1.UpdateMealPricesSchema), async (req, res) => {
     try {
         const { halfPrice, fullPrice } = req.body;
         const ws = await getOrCreateWorkspace();
-        const { data, error } = await supabase_js_1.supabase
+        const { data, error } = await supabase_js_1.supabaseAdmin
             .from('MealPrice')
-            .insert([{
-                workspaceId: ws.id,
-                halfPrice: parseFloat(halfPrice),
-                fullPrice: parseFloat(fullPrice)
-            }])
+            .insert([{ workspaceId: ws.id, halfPrice, fullPrice }])
             .select()
             .single();
         if (error)
             return res.status(400).json({ error: error.message });
-        res.json({ success: true, prices: data });
+        return res.json({ success: true, prices: data });
     }
     catch (err) {
-        res.status(500).json({ error: err.message });
+        return res.status(500).json({ error: err.message });
     }
 });
-// --- REPORTS & HISTORY ---
-router.get('/reports/monthly', async (req, res) => {
+// POST /api/admin/month-lock
+router.post('/admin/month-lock', requireAuth, requireAdmin, validate(spendly_shared_1.MonthLockSchema), async (req, res) => {
     try {
-        const userId = req.query.userId || '';
-        const month = req.query.month || new Date().toISOString().slice(0, 7);
-        if (!userId) {
-            return res.json({
-                month,
-                mealTotal: 0,
-                expenseTotal: 0,
-                paymentTotal: 0,
-                remainingBalance: 0,
-                categories: []
-            });
+        const { month, lock } = req.body;
+        const ws = await getOrCreateWorkspace();
+        if (lock) {
+            // Lock: generate snapshots for all workspace members
+            const { data: members } = await supabase_js_1.supabaseAdmin
+                .from('WorkspaceMember')
+                .select('userId')
+                .eq('workspaceId', ws.id);
+            const snapshots = [];
+            for (const member of members || []) {
+                const uid = member.userId;
+                const [mealsRes, expensesRes, paymentsRes] = await Promise.all([
+                    supabase_js_1.supabaseAdmin.from('Meal').select('totalCost').eq('userId', uid).like('date', `${month}%`),
+                    supabase_js_1.supabaseAdmin.from('Expense').select('amount').eq('userId', uid).like('date', `${month}%`),
+                    supabase_js_1.supabaseAdmin.from('Payment').select('amount').eq('userId', uid).eq('status', 'APPROVED'),
+                ]);
+                const mealTotal = (mealsRes.data || []).reduce((s, m) => s + (m.totalCost || 0), 0);
+                const expenseTotal = (expensesRes.data || []).reduce((s, e) => s + (e.amount || 0), 0);
+                const paymentTotal = (paymentsRes.data || []).reduce((s, p) => s + (p.amount || 0), 0);
+                const balanceDue = Math.max(0, mealTotal + expenseTotal - paymentTotal);
+                snapshots.push({
+                    workspaceId: ws.id,
+                    userId: uid,
+                    month,
+                    mealTotal,
+                    expenseTotal,
+                    paymentTotal,
+                    balanceDue,
+                    status: 'CLOSED',
+                    isLocked: true,
+                });
+            }
+            if (snapshots.length > 0) {
+                const { error } = await supabase_js_1.supabaseAdmin
+                    .from('MonthlySnapshot')
+                    .upsert(snapshots, { onConflict: 'workspaceId,userId,month' });
+                if (error)
+                    return res.status(400).json({ error: error.message });
+            }
+            return res.json({ success: true, action: 'locked', month, snapshotsCreated: snapshots.length });
         }
-        const { data: meals } = await supabase_js_1.supabase.from('Meal').select('*').eq('userId', userId);
-        const { data: expenses } = await supabase_js_1.supabase.from('Expense').select('*').eq('userId', userId);
-        const { data: payments } = await supabase_js_1.supabase.from('Payment').select('*').eq('userId', userId).eq('status', 'APPROVED');
-        const mList = (meals || []).filter(m => String(m.date).startsWith(month));
-        const eList = (expenses || []).filter(e => String(e.date).startsWith(month));
-        const mealTotal = mList.reduce((acc, m) => acc + (m.totalCost || 0), 0);
-        const expenseTotal = eList.reduce((acc, e) => acc + (e.amount || 0), 0);
-        const paymentTotal = (payments || []).reduce((acc, p) => acc + (p.amount || 0), 0);
-        // Group expenses by category
+        else {
+            // Unlock: update existing snapshots to OPEN
+            const { error } = await supabase_js_1.supabaseAdmin
+                .from('MonthlySnapshot')
+                .update({ isLocked: false, status: 'OPEN' })
+                .eq('workspaceId', ws.id)
+                .eq('month', month);
+            if (error)
+                return res.status(400).json({ error: error.message });
+            return res.json({ success: true, action: 'unlocked', month });
+        }
+    }
+    catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
+});
+// ─── REPORTS & HISTORY ────────────────────────────────────────────────────────
+// GET /api/reports/monthly
+router.get('/reports/monthly', requireAuth, async (req, res) => {
+    try {
+        const authUser = req.authUser;
+        const userId = authUser.id;
+        const month = req.query.month || new Date().toISOString().slice(0, 7);
+        const [mealsRes, expensesRes, paymentsRes] = await Promise.all([
+            supabase_js_1.supabaseAdmin.from('Meal').select('*').eq('userId', userId).like('date', `${month}%`),
+            supabase_js_1.supabaseAdmin.from('Expense').select('*').eq('userId', userId).like('date', `${month}%`),
+            supabase_js_1.supabaseAdmin.from('Payment').select('amount').eq('userId', userId).eq('status', 'APPROVED'),
+        ]);
+        const mealTotal = (mealsRes.data || []).reduce((acc, m) => acc + (m.totalCost || 0), 0);
+        const expenseTotal = (expensesRes.data || []).reduce((acc, e) => acc + (e.amount || 0), 0);
+        const paymentTotal = (paymentsRes.data || []).reduce((acc, p) => acc + (p.amount || 0), 0);
         const catMap = {};
         if (mealTotal > 0)
             catMap['Tiffin & Mess Meals'] = mealTotal;
-        for (const exp of eList) {
+        for (const exp of (expensesRes.data || [])) {
             catMap[exp.category] = (catMap[exp.category] || 0) + exp.amount;
         }
         const totalSpent = mealTotal + expenseTotal;
         const categories = Object.entries(catMap).map(([name, amount]) => ({
             name,
             amount,
-            pct: totalSpent > 0 ? Math.round((amount / totalSpent) * 100) + '%' : '0%'
+            pct: totalSpent > 0 ? Math.round((amount / totalSpent) * 100) + '%' : '0%',
         }));
-        res.json({
+        return res.json({
             month,
             mealTotal,
             expenseTotal,
             paymentTotal,
             remainingBalance: Math.max(0, totalSpent - paymentTotal),
-            categories
+            categories,
         });
     }
     catch (err) {
-        res.status(500).json({ error: err.message });
+        return res.status(500).json({ error: err.message });
     }
 });
-router.get('/history', async (req, res) => {
+// GET /api/history
+router.get('/history', requireAuth, async (req, res) => {
     try {
-        const userId = req.query.userId || '';
-        const { data: snapshots } = await supabase_js_1.supabase
+        const authUser = req.authUser;
+        const { data: snapshots, error } = await supabase_js_1.supabaseAdmin
             .from('MonthlySnapshot')
             .select('*')
-            .eq('userId', userId)
-            .order('createdAt', { ascending: false });
-        res.json({ history: snapshots || [] });
+            .eq('userId', authUser.id)
+            .order('month', { ascending: false });
+        if (error)
+            return res.status(400).json({ error: error.message });
+        return res.json({ history: snapshots || [] });
     }
     catch (err) {
-        res.status(500).json({ error: err.message });
+        return res.status(500).json({ error: err.message });
+    }
+});
+// GET /api/expense-categories
+router.get('/expense-categories', async (_req, res) => {
+    try {
+        const { data, error } = await supabase_js_1.supabaseAdmin
+            .from('ExpenseCategory')
+            .select('name')
+            .order('name', { ascending: true });
+        if (error || !data || data.length === 0) {
+            // Return defaults if table empty
+            return res.json({
+                categories: ['Food', 'Tea', 'Snacks', 'Grocery', 'Laundry', 'Travel', 'Medical', 'Shopping', 'Other']
+            });
+        }
+        return res.json({ categories: data.map(c => c.name) });
+    }
+    catch (err) {
+        return res.status(500).json({ error: err.message });
     }
 });
 exports.default = router;

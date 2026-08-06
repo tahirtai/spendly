@@ -29,4 +29,28 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api', apiRouter);
 
 // Health check
-app.get('/health', (_req: Re
+app.get('/health', (_req: Request, res: Response) => {
+  res.json({ status: 'ok', service: 'Spendly API', timestamp: new Date().toISOString() });
+});
+
+// 404 handler
+app.use((_req: Request, res: Response) => {
+  res.status(404).json({ error: 'API endpoint not found.' });
+});
+
+// Global Error Handler
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+  console.error('[API Error]:', err.message);
+  if (err.message.includes('File too large')) {
+    return res.status(413).json({ error: 'File size exceeds 5MB limit.' });
+  }
+  if (err.message.includes('Only PNG')) {
+    return res.status(400).json({ error: err.message });
+  }
+  res.status(500).json({ error: err.message || 'Internal Server Error' });
+});
+
+app.listen(PORT, async () => {
+  console.log(`🚀 Spendly Server running on http://localhost:${PORT}`);
+  await seedDatabase();
+});

@@ -14,18 +14,15 @@ export declare const RegisterSchema: z.ZodObject<{
     email: z.ZodString;
     password: z.ZodString;
     phone: z.ZodOptional<z.ZodString>;
-    workspaceCode: z.ZodString;
 }, "strip", z.ZodTypeAny, {
     fullName: string;
     email: string;
     password: string;
-    workspaceCode: string;
     phone?: string | undefined;
 }, {
     fullName: string;
     email: string;
     password: string;
-    workspaceCode: string;
     phone?: string | undefined;
 }>;
 export type RegisterInput = z.infer<typeof RegisterSchema>;
@@ -71,6 +68,23 @@ export declare const CreateExpenseSchema: z.ZodObject<{
     note?: string | undefined;
 }>;
 export type CreateExpenseInput = z.infer<typeof CreateExpenseSchema>;
+export declare const UpdateExpenseSchema: z.ZodObject<{
+    category: z.ZodString;
+    amount: z.ZodNumber;
+    note: z.ZodOptional<z.ZodString>;
+    date: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+    date: string;
+    category: string;
+    amount: number;
+    note?: string | undefined;
+}, {
+    date: string;
+    category: string;
+    amount: number;
+    note?: string | undefined;
+}>;
+export type UpdateExpenseInput = z.infer<typeof UpdateExpenseSchema>;
 export declare const SubmitPaymentSchema: z.ZodObject<{
     type: z.ZodEnum<["CASH", "UPI"]>;
     amount: z.ZodNumber;
@@ -91,6 +105,17 @@ export declare const SubmitPaymentSchema: z.ZodObject<{
     screenshotPath?: string | undefined;
 }>;
 export type SubmitPaymentInput = z.infer<typeof SubmitPaymentSchema>;
+export declare const VerifyPaymentSchema: z.ZodObject<{
+    status: z.ZodEnum<["PENDING", "APPROVED", "REJECTED"]>;
+    verifiedBy: z.ZodOptional<z.ZodString>;
+}, "strip", z.ZodTypeAny, {
+    status: "PENDING" | "APPROVED" | "REJECTED";
+    verifiedBy?: string | undefined;
+}, {
+    status: "PENDING" | "APPROVED" | "REJECTED";
+    verifiedBy?: string | undefined;
+}>;
+export type VerifyPaymentInput = z.infer<typeof VerifyPaymentSchema>;
 export declare const UpdateMealPricesSchema: z.ZodObject<{
     halfPrice: z.ZodNumber;
     fullPrice: z.ZodNumber;
@@ -102,6 +127,39 @@ export declare const UpdateMealPricesSchema: z.ZodObject<{
     fullPrice: number;
 }>;
 export type UpdateMealPricesInput = z.infer<typeof UpdateMealPricesSchema>;
+export declare const UpdateMemberRoleSchema: z.ZodObject<{
+    role: z.ZodEnum<["STUDENT", "ADMIN", "SUPER_ADMIN"]>;
+}, "strip", z.ZodTypeAny, {
+    role: "STUDENT" | "ADMIN" | "SUPER_ADMIN";
+}, {
+    role: "STUDENT" | "ADMIN" | "SUPER_ADMIN";
+}>;
+export type UpdateMemberRoleInput = z.infer<typeof UpdateMemberRoleSchema>;
+export declare const MonthLockSchema: z.ZodObject<{
+    month: z.ZodString;
+    lock: z.ZodBoolean;
+}, "strip", z.ZodTypeAny, {
+    month: string;
+    lock: boolean;
+}, {
+    month: string;
+    lock: boolean;
+}>;
+export type MonthLockInput = z.infer<typeof MonthLockSchema>;
+export declare const UpdateProfileSchema: z.ZodObject<{
+    fullName: z.ZodOptional<z.ZodString>;
+    phone: z.ZodOptional<z.ZodString>;
+    avatarUrl: z.ZodOptional<z.ZodString>;
+}, "strip", z.ZodTypeAny, {
+    fullName?: string | undefined;
+    phone?: string | undefined;
+    avatarUrl?: string | undefined;
+}, {
+    fullName?: string | undefined;
+    phone?: string | undefined;
+    avatarUrl?: string | undefined;
+}>;
+export type UpdateProfileInput = z.infer<typeof UpdateProfileSchema>;
 export interface UserProfile {
     id: string;
     email: string;
@@ -112,3 +170,71 @@ export interface UserProfile {
     workspaceId?: string;
     workspaceName?: string;
 }
+export interface MealRecord {
+    id: string;
+    workspaceId: string;
+    userId: string;
+    date: string;
+    lunch: MealOption;
+    dinner: MealOption;
+    lunchCost: number;
+    dinnerCost: number;
+    totalCost: number;
+}
+export interface ExpenseRecord {
+    id: string;
+    workspaceId: string;
+    userId: string;
+    category: string;
+    amount: number;
+    note?: string | null;
+    date: string;
+    createdAt: string;
+}
+export interface PaymentRecord {
+    id: string;
+    workspaceId: string;
+    userId: string;
+    type: PaymentType;
+    amount: number;
+    screenshotPath?: string | null;
+    note?: string | null;
+    date: string;
+    status: PaymentStatus;
+    verifiedBy?: string | null;
+    createdAt: string;
+}
+export interface MonthlySnapshotRecord {
+    id: string;
+    workspaceId: string;
+    userId: string;
+    month: string;
+    mealTotal: number;
+    expenseTotal: number;
+    paymentTotal: number;
+    balanceDue: number;
+    status: MonthStatus;
+    isLocked: boolean;
+    createdAt: string;
+}
+export interface DashboardSummary {
+    currentMonthTotal: number;
+    remainingBalance: number;
+    mealsThisMonth: number;
+    dailyExpenses: number;
+    totalPayments: number;
+    missingEntries: number;
+}
+export interface MonthlyReport {
+    month: string;
+    mealTotal: number;
+    expenseTotal: number;
+    paymentTotal: number;
+    remainingBalance: number;
+    categories: Array<{
+        name: string;
+        amount: number;
+        pct: string;
+    }>;
+}
+//# sourceMappingURL=index.d.ts.map

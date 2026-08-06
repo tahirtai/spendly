@@ -1,21 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  DollarSign, 
-  Utensils, 
-  Receipt, 
-  CreditCard, 
-  AlertCircle, 
-  Plus, 
-  ArrowUpRight, 
-  CheckCircle2, 
-  TrendingUp,
+import {
+  DollarSign,
+  Utensils,
+  Receipt,
+  CreditCard,
+  AlertCircle,
+  Plus,
+  ArrowUpRight,
+  CheckCircle2,
   Sun,
   Moon,
-  Clock,
   Sparkles
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../../store/useAuthStore';
+import { api } from '../../lib/api';
 
 export const DashboardView: React.FC = () => {
   const { user } = useAuthStore();
@@ -38,64 +37,51 @@ export const DashboardView: React.FC = () => {
   });
 
   const [isLoading, setIsLoading] = useState(true);
+  const [isSavingMeal, setIsSavingMeal] = useState(false);
 
-  // Fetch real data on mount
-  useEffect(() => {
+  const currentMonthLabel = new Date().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+
+  const loadDashboard = async () => {
     if (!user?.id) return;
-    
-    async function loadDashboard() {
-      setIsLoading(true);
-      try {
-        const [sumRes, mealRes] = await Promise.all([
-          fetch(`/api/dashboard/summary?userId=${user?.id}`),
-          fetch(`/api/meals/today?userId=${user?.id}`)
-        ]);
-
-        if (sumRes.ok) {
-          const sumData = await sumRes.json();
-          setMetrics(sumData);
-        }
-
-        if (mealRes.ok) {
-          const mealData = await mealRes.json();
-          setTodayMeal(mealData);
-        }
-      } catch (err) {
-        console.error('Failed to load dashboard data:', err);
-      } finally {
-        setIsLoading(false);
-      }
+    setIsLoading(true);
+    try {
+      const [sumData, mealData] = await Promise.all([
+        api.get('/dashboard/summary'),
+        api.get('/meals/today'),
+      ]);
+      setMetrics(sumData);
+      setTodayMeal(mealData);
+    } catch (err) {
+      console.error('Failed to load dashboard data:', err);
+    } finally {
+      setIsLoading(false);
     }
+  };
 
+  useEffect(() => {
     loadDashboard();
   }, [user?.id]);
 
   const handleMealChange = async (type: 'lunch' | 'dinner', option: string) => {
     const updated = { ...todayMeal, [type]: option };
     setTodayMeal(updated);
+    setIsSavingMeal(true);
 
     try {
-      const res = await fetch('/api/meals', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user?.id,
-          date: updated.date,
-          lunch: updated.lunch,
-          dinner: updated.dinner,
-        }),
+      const data = await api.post('/meals', {
+        date: updated.date,
+        lunch: updated.lunch,
+        dinner: updated.dinner,
       });
+      if (data.meal) setTodayMeal(data.meal);
 
-      if (res.ok) {
-        const data = await res.json();
-        if (data.meal) setTodayMeal(data.meal);
-        
-        // Refresh metrics
-        const sumRes = await fetch(`/api/dashboard/summary?userId=${user?.id}`);
-        if (sumRes.ok) setMetrics(await sumRes.json());
-      }
+      // Refresh metrics
+      const sumData = await api.get('/dashboard/summary');
+      setMetrics(sumData);
     } catch (err) {
       console.error('Failed to save meal selection:', err);
+    } finally {
+      setIsSavingMeal(false);
     }
   };
 
@@ -110,7 +96,7 @@ export const DashboardView: React.FC = () => {
             </h1>
           </div>
           <p className="text-[#464554] text-xs mt-1">
-            Hostel Expense Overview • August 2026
+            Hostel Expense Overview • {currentMonthLabel}
           </p>
         </div>
 
@@ -133,8 +119,10 @@ export const DashboardView: React.FC = () => {
               <DollarSign className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-3xl font-display font-bold text-[#0b1c30] mt-3">₹{metrics.currentMonthTotal}</p>
-          <span className="text-[#767586] text-xs mt-2 block">Meals & Daily Expenses</span>
+          <p className="text-3xl font-display font-bold text-[#0b1c30] mt-3">
+            {isLoading ? '—' : `₹${metrics.currentMonthTotal.toFixed(0)}`}
+          </p>
+          <span className="text-[#767586] text-xs mt-2 block">Meals &amp; Daily Expenses</span>
         </div>
 
         <div className="stitch-card stitch-card-hover p-5 bg-white">
@@ -144,7 +132,9 @@ export const DashboardView: React.FC = () => {
               <CreditCard className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-3xl font-display font-bold text-[#006c49] mt-3">₹{metrics.remainingBalance}</p>
+          <p className="text-3xl font-display font-bold text-[#006c49] mt-3">
+            {isLoading ? '—' : `₹${metrics.remainingBalance.toFixed(0)}`}
+          </p>
           <span className="text-[#767586] text-xs mt-2 block">Outstanding Dues</span>
         </div>
 
@@ -155,7 +145,9 @@ export const DashboardView: React.FC = () => {
               <Utensils className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-3xl font-display font-bold text-[#0b1c30] mt-3">{metrics.mealsThisMonth}</p>
+          <p className="text-3xl font-display font-bold text-[#0b1c30] mt-3">
+            {isLoading ? '—' : metrics.mealsThisMonth}
+          </p>
           <span className="text-[#767586] text-xs mt-2 block">Recorded Entries</span>
         </div>
 
@@ -166,7 +158,9 @@ export const DashboardView: React.FC = () => {
               <AlertCircle className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-3xl font-display font-bold text-amber-800 mt-3">{metrics.missingEntries} Days</p>
+          <p className="text-3xl font-display font-bold text-amber-800 mt-3">
+            {isLoading ? '—' : `${metrics.missingEntries} Days`}
+          </p>
           <Link to="/tiffin" className="text-amber-700 text-xs font-semibold hover:underline mt-2 flex items-center gap-1">
             <span>Fill missing days</span>
             <ArrowUpRight className="w-3 h-3" />
@@ -188,7 +182,11 @@ export const DashboardView: React.FC = () => {
                 <p className="text-xs text-[#767586] mt-0.5">{todayMeal.date}</p>
               </div>
               <span className="text-xs bg-emerald-50 text-[#006c49] border border-emerald-200 px-3 py-1 rounded-full font-medium flex items-center gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5" /> Month Unlocked
+                {isSavingMeal ? (
+                  <><span className="animate-spin">⟳</span> Saving...</>
+                ) : (
+                  <><CheckCircle2 className="w-3.5 h-3.5" /> Auto-saved</>
+                )}
               </span>
             </div>
 
@@ -200,18 +198,19 @@ export const DashboardView: React.FC = () => {
                   <span className="text-sm font-semibold text-[#0b1c30] flex items-center gap-1.5">
                     <Sun className="w-4 h-4 text-amber-500" /> Lunch Meal
                   </span>
-                  <span className="text-xs text-[#4648d4] font-bold">₹60 / ₹40</span>
+                  <span className="text-xs text-[#4648d4] font-bold">₹{todayMeal.lunchCost}</span>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   {['FULL', 'HALF', 'SKIP'].map((opt) => (
                     <button
                       key={opt}
                       onClick={() => handleMealChange('lunch', opt)}
+                      disabled={isSavingMeal}
                       className={`py-2 rounded-lg text-xs font-bold transition-all ${
                         todayMeal.lunch === opt
                           ? 'bg-[#4648d4] text-white shadow-md shadow-[#4648d4]/20'
                           : 'bg-white text-[#464554] hover:text-[#0b1c30] border border-slate-200'
-                      }`}
+                      } disabled:opacity-60`}
                     >
                       {opt}
                     </button>
@@ -225,18 +224,19 @@ export const DashboardView: React.FC = () => {
                   <span className="text-sm font-semibold text-[#0b1c30] flex items-center gap-1.5">
                     <Moon className="w-4 h-4 text-indigo-500" /> Dinner Meal
                   </span>
-                  <span className="text-xs text-[#4648d4] font-bold">₹60 / ₹40</span>
+                  <span className="text-xs text-[#4648d4] font-bold">₹{todayMeal.dinnerCost}</span>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   {['FULL', 'HALF', 'SKIP'].map((opt) => (
                     <button
                       key={opt}
                       onClick={() => handleMealChange('dinner', opt)}
+                      disabled={isSavingMeal}
                       className={`py-2 rounded-lg text-xs font-bold transition-all ${
                         todayMeal.dinner === opt
                           ? 'bg-[#4648d4] text-white shadow-md shadow-[#4648d4]/20'
                           : 'bg-white text-[#464554] hover:text-[#0b1c30] border border-slate-200'
-                      }`}
+                      } disabled:opacity-60`}
                     >
                       {opt}
                     </button>
@@ -248,20 +248,20 @@ export const DashboardView: React.FC = () => {
             <div className="flex justify-between items-center pt-2">
               <span className="text-xs text-[#767586]">Today's Total: <span className="text-[#0b1c30] font-bold text-sm">₹{todayMeal.totalCost}</span></span>
               <span className="text-xs text-[#006c49] font-semibold flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5" /> Auto-saved
+                <CheckCircle2 className="w-3.5 h-3.5" /> Auto-saved to database
               </span>
             </div>
           </div>
         </div>
 
-        {/* Right Column: Hostel Info & Shortcuts */}
+        {/* Right Column: Workspace Info & Shortcuts */}
         <div className="space-y-6">
           <div className="stitch-card p-5 bg-white space-y-4">
             <h3 className="font-display text-xs font-bold text-[#767586] uppercase tracking-wider">
               Hostel Workspace
             </h3>
             <div className="bg-[#f8f9ff] p-4 rounded-xl border border-[#e2e8f0]">
-              <p className="font-bold text-[#0b1c30]">Spendly Demo Hostel</p>
+              <p className="font-bold text-[#0b1c30]">{user?.workspaceName || 'Spendly Workspace'}</p>
               <p className="text-xs text-[#464554] mt-1">Code: <span className="text-[#4648d4] font-mono font-semibold">SPENDLY_HOSTEL</span></p>
               <p className="text-xs text-[#464554] mt-1">Role: <span className="font-semibold capitalize">{user?.role?.toLowerCase() || 'student'}</span></p>
             </div>

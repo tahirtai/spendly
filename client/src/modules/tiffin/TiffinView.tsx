@@ -1,10 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { Utensils, Calendar as CalendarIcon, CheckCircle2, AlertTriangle, Sun, Moon, Save } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Utensils, Calendar as CalendarIcon, CheckCircle2, Sun, Moon } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
+import { api } from '../../lib/api';
 
 export const TiffinView: React.FC = () => {
   const { user } = useAuthStore();
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const today = new Date().toISOString().split('T')[0];
+  const currentMonth = new Date().toISOString().slice(0, 7);
+
+  const [selectedDate, setSelectedDate] = useState(today);
   const [lunch, setLunch] = useState('SKIP');
   const [dinner, setDinner] = useState('SKIP');
   const [lunchCost, setLunchCost] = useState(0);
@@ -14,43 +18,78 @@ export const TiffinView: React.FC = () => {
   const [halfPrice, setHalfPrice] = useState(40);
   const [fullPrice, setFullPrice] = useState(60);
   const [monthMeals, setMonthMeals] = useState<any[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
 
-  // Load prices and meal for date
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const priceRes = await fetch('/api/admin/prices');
-        if (priceRes.ok) {
-          const prices = await priceRes.json();
-          setHalfPrice(prices.halfPrice || 40);
-          setFullPrice(prices.fullPrice || 60);
-        }
+  // Current month label from selectedDate
+  const displayMonth = selectedDate.slice(0, 7);
+  const [year, monthNum] = displayMonth.split('-').map(Number);
+  const daysInMonth = new Date(year, monthNum, 0).getDate();
+  const monthLabel = new Date(year, monthNum - 1, 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
 
-        if (user?.id) {
-          const mealRes = await fetch(`/api/meals/today?userId=${user.id}`);
-          if (mealRes.ok) {
-            const data = await mealRes.json();
-            if (data) {
-              setLunch(data.lunch || 'SKIP');
-              setDinner(data.dinner || 'SKIP');
-              setLunchCost(data.lunchCost || 0);
-              setDinnerCost(data.dinnerCost || 0);
-              setTotalCost(data.totalCost || 0);
-            }
-          }
-
-          const mListRes = await fetch(`/api/meals/month?userId=${user.id}`);
-          if (mListRes.ok) {
-            const mData = await mListRes.json();
-            setMonthMeals(mData.meals || []);
-          }
-        }
-      } catch (err) {
-        console.error('Failed to load tiffin data:', err);
-      }
+  const loadPrices = async () => {
+    try {
+      const prices = await api.get('/admin/prices');
+      setHalfPrice(prices.halfPrice || 40);
+      setFullPrice(prices.fullPrice || 60);
+    } catch {
+      // Use defaults
     }
-    loadData();
-  }, [user?.id, selectedDate]);
+  };
+
+  const loadMonthMeals = useCallback(async () => {
+    if (!user?.id) return;
+    try {
+      const data = await api.get(`/meals/month?month=${displayMonth}`);
+      setMonthMeals(data.meals || []);
+    } catch {
+      // keep existing
+    }
+  }, [user?.id, displayMonth]);
+
+  const loadMealForDate = useCallback(async () => {
+    if (!user?.id) return;
+    try {
+      const data = selectedDate === today
+        ? await api.get('/meals/today')
+        : await api.get(`/meals/month?month=${selectedDate.slice(0, 7)}`);
+
+      if (selectedDate === today) {
+        setLunch(data.lunch || 'SKIP');
+        setDinner(data.dinner || 'SKIP');
+        setLunchCost(data.lunchCost || 0);
+        setDinnerCost(data.dinnerCost || 0);
+        setTotalCost(data.totalCost || 0);
+      } else {
+        // Find the selected date's meal from month list
+        const meal = (data.meals || []).find((m: any) => m.date === selectedDate || m.date?.startsWith(selectedDate));
+        if (meal) {
+          setLunch(meal.lunch || 'SKIP');
+          setDinner(meal.dinner || 'SKIP');
+          setLunchCost(meal.lunchCost || 0);
+          setDinnerCost(meal.dinnerCost || 0);
+          setTotalCost(meal.totalCost || 0);
+        } else {
+          setLunch('SKIP');
+          setDinner('SKIP');
+          setLunchCost(0);
+          setDinnerCost(0);
+          setTotalCost(0);
+        }
+      }
+    } catch {
+      // keep defaults
+    }
+  }, [user?.id, selectedDate, today]);
+
+  useEffect(() => {
+    loadPrices();
+  }, []);
+
+  useEffect(() => {
+    loadMonthMeals();
+    loadMealForDate();
+  }, [loadMonthMeals, loadMealForDate]);
 
   const handleSaveMeal = async (newLunch: string, newDinner: string) => {
     setLunch(newLunch);
@@ -65,30 +104,31 @@ export const TiffinView: React.FC = () => {
     setTotalCost(tCost);
 
     if (!user?.id) return;
+    setIsSaving(true);
+    setSaveStatus('saving');
 
     try {
-      await fetch('/api/meals', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user.id,
-          date: selectedDate,
-          lunch: newLunch,
-          dinner: newDinner,
-        }),
+      await api.post('/meals', {
+        date: selectedDate,
+        lunch: newLunch,
+        dinner: newDinner,
       });
-
-      const mListRes = await fetch(`/api/meals/month?userId=${user.id}`);
-      if (mListRes.ok) {
-        const mData = await mListRes.json();
-        setMonthMeals(mData.meals || []);
-      }
+      setSaveStatus('saved');
+      await loadMonthMeals();
     } catch (err) {
       console.error('Failed to save meal:', err);
+    } finally {
+      setIsSaving(false);
+      setTimeout(() => setSaveStatus('idle'), 2000);
     }
   };
 
-  const recordedDayMap = new Set(monthMeals.map((m) => new Date(m.date).getDate()));
+  const recordedDayMap = new Set(
+    monthMeals.map((m) => {
+      const d = new Date(m.date);
+      return d.getUTCDate();
+    })
+  );
   const todayDay = new Date().getDate();
 
   return (
@@ -98,7 +138,7 @@ export const TiffinView: React.FC = () => {
         <div>
           <h1 className="font-display text-2xl md:text-3xl font-bold text-[#0b1c30] flex items-center gap-3">
             <Utensils className="w-8 h-8 text-[#4648d4]" />
-            Tiffin & Mess Tracker
+            Tiffin &amp; Mess Tracker
           </h1>
           <p className="text-[#464554] text-xs mt-1">
             Log daily meals, track missing entries, and calculate monthly mess dues.
@@ -153,11 +193,12 @@ export const TiffinView: React.FC = () => {
               <button
                 key={item.val}
                 onClick={() => handleSaveMeal(item.val, dinner)}
+                disabled={isSaving}
                 className={`p-3.5 rounded-xl text-center transition-all ${
                   lunch === item.val
                     ? 'bg-[#4648d4] text-white shadow-md shadow-[#4648d4]/20 border border-[#4648d4]'
                     : 'bg-white border border-slate-200 text-[#464554] hover:text-[#0b1c30]'
-                }`}
+                } disabled:opacity-60`}
               >
                 <p className="font-bold text-xs">{item.label}</p>
                 <p className="text-[11px] opacity-80 mt-1">{item.desc}</p>
@@ -185,11 +226,12 @@ export const TiffinView: React.FC = () => {
               <button
                 key={item.val}
                 onClick={() => handleSaveMeal(lunch, item.val)}
+                disabled={isSaving}
                 className={`p-3.5 rounded-xl text-center transition-all ${
                   dinner === item.val
                     ? 'bg-[#4648d4] text-white shadow-md shadow-[#4648d4]/20 border border-[#4648d4]'
                     : 'bg-white border border-slate-200 text-[#464554] hover:text-[#0b1c30]'
-                }`}
+                } disabled:opacity-60`}
               >
                 <p className="font-bold text-xs">{item.label}</p>
                 <p className="text-[11px] opacity-80 mt-1">{item.desc}</p>
@@ -205,8 +247,13 @@ export const TiffinView: React.FC = () => {
           <span className="text-xs text-[#767586]">Selected Date Total Cost:</span>
           <p className="font-display font-bold text-2xl text-[#0b1c30]">₹{totalCost}</p>
         </div>
-        <span className="text-xs text-[#006c49] font-semibold flex items-center gap-1.5 bg-[#e6f9f1] px-3 py-1.5 rounded-xl border border-[#6ffbbe]">
-          <CheckCircle2 className="w-4 h-4" /> Auto-saved to Database
+        <span className={`text-xs font-semibold flex items-center gap-1.5 px-3 py-1.5 rounded-xl border ${
+          saveStatus === 'saving'
+            ? 'text-amber-700 bg-amber-50 border-amber-200'
+            : 'text-[#006c49] bg-[#e6f9f1] border-[#6ffbbe]'
+        }`}>
+          <CheckCircle2 className="w-4 h-4" />
+          {saveStatus === 'saving' ? 'Saving...' : 'Auto-saved to Database'}
         </span>
       </div>
 
@@ -216,7 +263,7 @@ export const TiffinView: React.FC = () => {
           <div>
             <h3 className="font-display font-bold text-base text-[#0b1c30] flex items-center gap-2">
               <CalendarIcon className="w-4 h-4 text-[#4648d4]" />
-              August 2026 Meal Calendar
+              {monthLabel} Meal Calendar
             </h3>
             <p className="text-xs text-[#767586] mt-0.5">Click any day to update meal entries.</p>
           </div>
@@ -230,18 +277,24 @@ export const TiffinView: React.FC = () => {
           </div>
         </div>
 
-        {/* 31 Days Grid */}
+        {/* Days Grid */}
         <div className="grid grid-cols-7 gap-2 pt-2">
-          {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => {
+          {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((day) => {
             const isRecorded = recordedDayMap.has(day);
-            const isToday = day === todayDay;
-            const isMissing = !isRecorded && day < todayDay;
+            const isToday = displayMonth === currentMonth && day === todayDay;
+            const isMissing = displayMonth === currentMonth && !isRecorded && day < todayDay;
+            const dayStr = `${displayMonth}-${String(day).padStart(2, '0')}`;
+            const isSelected = selectedDate === dayStr;
 
             return (
               <button
                 key={day}
-                onClick={() => setSelectedDate(`2026-08-${day < 10 ? '0' + day : day}`)}
+                onClick={() => setSelectedDate(dayStr)}
                 className={`p-3 rounded-xl text-center border transition-all text-xs font-bold ${
+                  isSelected
+                    ? 'ring-2 ring-[#4648d4] ring-offset-1'
+                    : ''
+                } ${
                   isToday
                     ? 'bg-[#4648d4] text-white border-[#4648d4] shadow-md'
                     : isRecorded
@@ -251,7 +304,7 @@ export const TiffinView: React.FC = () => {
                     : 'bg-[#f8f9ff] text-[#464554] border-slate-200 hover:border-slate-300'
                 }`}
               >
-                Day {day}
+                {day}
                 {isMissing && <span className="block text-[10px] text-amber-700 font-medium mt-0.5">Missing</span>}
               </button>
             );

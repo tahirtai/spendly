@@ -9,12 +9,14 @@ import {
   Users, 
   RefreshCw, 
   Search, 
-  UserCheck, 
-  UserX,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Image,
+  AlertCircle
 } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
+import { api, ApiError } from '../../lib/api';
+import { UpdateMealPricesSchema } from 'spendly-shared';
 
 interface Member {
   id: string;
@@ -31,14 +33,20 @@ interface PendingPayment {
   amount: number;
   date: string;
   note?: string;
+  screenshotPath?: string | null;
+  user?: { fullName: string; email: string };
 }
 
 export const AdminView: React.FC = () => {
   const { user } = useAuthStore();
+  const currentMonth = new Date().toISOString().slice(0, 7);
+  const currentMonthLabel = new Date().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+
   const [halfPrice, setHalfPrice] = useState(40);
   const [fullPrice, setFullPrice] = useState(60);
   const [isMonthLocked, setIsMonthLocked] = useState(false);
   const [saveStatus, setSaveStatus] = useState('');
+  const [priceError, setPriceError] = useState('');
 
   // Members state
   const [members, setMembers] = useState<Member[]>([]);
@@ -49,30 +57,24 @@ export const AdminView: React.FC = () => {
   // Pending Payments Queue
   const [pendingPayments, setPendingPayments] = useState<PendingPayment[]>([]);
 
+  // Signed URL viewer
+  const [viewingProof, setViewingProof] = useState<string | null>(null);
+
   // Load Admin Data
   const loadAdminData = async () => {
     try {
-      // Load prices
-      const pRes = await fetch('/api/admin/prices');
-      if (pRes.ok) {
-        const prices = await pRes.json();
-        setHalfPrice(prices.halfPrice || 40);
-        setFullPrice(prices.fullPrice || 60);
-      }
+      const [priceData, mData, payData] = await Promise.all([
+        api.get('/admin/prices').catch(() => null),
+        api.get('/admin/members').catch(() => null),
+        api.get('/admin/pending-payments').catch(() => null),
+      ]);
 
-      // Load members
-      const mRes = await fetch('/api/admin/members');
-      if (mRes.ok) {
-        const mData = await mRes.json();
-        setMembers(mData.members || []);
+      if (priceData) {
+        setHalfPrice(priceData.halfPrice || 40);
+        setFullPrice(priceData.fullPrice || 60);
       }
-
-      // Load pending payments
-      const payRes = await fetch('/api/admin/pending-payments');
-      if (payRes.ok) {
-        const payData = await payRes.json();
-        setPendingPayments(payData.pendingPayments || []);
-      }
+      if (mData) setMembers(mData.members || []);
+      if (payData) setPendingPayments(payData.pendingPayments || []);
     } catch (err) {
       console.error('Failed to load admin data:', err);
     }
@@ -84,68 +86,75 @@ export const AdminView: React.FC = () => {
 
   const handleSavePrices = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      const res = await fetch('/api/admin/prices', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ halfPrice, fullPrice }),
-      });
+    setPriceError('');
 
-      if (res.ok) {
-        setSaveStatus('Meal prices updated!');
-        setTimeout(() => setSaveStatus(''), 2000);
-      }
-    } catch (err) {
-      console.error('Failed to save meal prices:', err);
+    const result = UpdateMealPricesSchema.safeParse({ halfPrice, fullPrice });
+    if (!result.success) {
+      setPriceError(result.error.issues[0]?.message || 'Invalid prices.');
+      return;
+    }
+
+    try {
+      await api.post('/admin/prices', { halfPrice, fullPrice });
+      setSaveStatus('Meal prices updated successfully!');
+      setTimeout(() => setSaveStatus(''), 2500);
+    } catch (err: any) {
+      setPriceError(err instanceof ApiError ? err.message : 'Failed to save prices.');
     }
   };
 
   const handleRoleChange = async (memberId: string, currentRole: string) => {
     const newRole = currentRole === 'ADMIN' ? 'STUDENT' : 'ADMIN';
+    if (!confirm(`Change role to ${newRole}?`)) return;
     try {
-      const res = await fetch(`/api/admin/members/${memberId}/role`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role: newRole }),
-      });
-
-      if (res.ok) loadAdminData();
-    } catch (err) {
-      console.error('Failed to update member role:', err);
+      await api.patch(`/admin/members/${memberId}/role`, { role: newRole });
+      loadAdminData();
+    } catch (err: any) {
+      alert(err instanceof ApiError ? err.message : 'Failed to update member role.');
     }
   };
 
   const handleVerifyPayment = async (paymentId: string, status: 'APPROVED' | 'REJECTED') => {
+    if (!confirm(`${status === 'APPROVED' ? 'Approve' : 'Reject'} this payment?`)) return;
     try {
-      const res = await fetch(`/api/admin/payments/${paymentId}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status, verifiedBy: user?.fullName || 'Admin' }),
+      await api.patch(`/admin/payments/${paymentId}/status`, {
+        status,
+        verifiedBy: user?.fullName || 'Admin',
       });
+      loadAdminData();
+    } catch (err: any) {
+      alert(err instanceof ApiError ? err.message : 'Failed to verify payment.');
+    }
+  };
 
-      if (res.ok) loadAdminData();
-    } catch (err) {
-      console.error('Failed to verify payment:', err);
+  const handleViewProof = async (paymentId: string) => {
+    try {
+      const data = await api.get(`/payments/${paymentId}/proof-url`);
+      if (data.signedUrl) {
+        setViewingProof(data.signedUrl);
+      }
+    } catch (err: any) {
+      alert(err instanceof ApiError ? err.message : 'Could not load screenshot.');
     }
   };
 
   const handleMonthLockToggle = async () => {
     const nextState = !isMonthLocked;
+    const action = nextState ? `Lock ${currentMonthLabel} Month` : `Unlock ${currentMonthLabel} Month`;
+    if (!confirm(`${action}? This will generate monthly snapshots for all residents.`)) return;
+
     setIsMonthLocked(nextState);
     try {
-      await fetch('/api/admin/month-lock', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ month: '2026-08', lock: nextState }),
-      });
-    } catch (err) {
-      console.error('Failed to toggle month lock:', err);
+      await api.post('/admin/month-lock', { month: currentMonth, lock: nextState });
+    } catch (err: any) {
+      setIsMonthLocked(!nextState); // revert
+      alert(err instanceof ApiError ? err.message : 'Failed to toggle month lock.');
     }
   };
 
   // Filtered members
-  const filteredMembers = members.filter(m => 
-    m.fullName.toLowerCase().includes(memberSearch.toLowerCase()) || 
+  const filteredMembers = members.filter(m =>
+    m.fullName.toLowerCase().includes(memberSearch.toLowerCase()) ||
     m.email.toLowerCase().includes(memberSearch.toLowerCase())
   );
 
@@ -178,7 +187,7 @@ export const AdminView: React.FC = () => {
           }`}
         >
           {isMonthLocked ? <Lock className="w-4 h-4 text-amber-700" /> : <Unlock className="w-4 h-4 text-[#767586]" />}
-          {isMonthLocked ? 'Month Locked (August 2026)' : 'Lock August 2026 Month'}
+          {isMonthLocked ? `Locked (${currentMonthLabel})` : `Lock ${currentMonthLabel}`}
         </button>
       </div>
 
@@ -193,6 +202,13 @@ export const AdminView: React.FC = () => {
               Updating prices affects only future meal logs. Historical months preserve old rates.
             </p>
 
+            {priceError && (
+              <div className="bg-rose-50 border border-rose-200 text-rose-600 text-xs p-3 rounded-xl flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                <span>{priceError}</span>
+              </div>
+            )}
+
             <form onSubmit={handleSavePrices} className="space-y-3">
               <div>
                 <label className="text-xs font-semibold text-[#464554] block mb-1">Half Meal Rate (₹)</label>
@@ -201,6 +217,7 @@ export const AdminView: React.FC = () => {
                   value={halfPrice}
                   onChange={(e) => setHalfPrice(Number(e.target.value))}
                   className="input-field text-xs"
+                  min="0" step="0.5" required
                 />
               </div>
 
@@ -211,6 +228,7 @@ export const AdminView: React.FC = () => {
                   value={fullPrice}
                   onChange={(e) => setFullPrice(Number(e.target.value))}
                   className="input-field text-xs"
+                  min="0" step="0.5" required
                 />
               </div>
 
@@ -238,16 +256,27 @@ export const AdminView: React.FC = () => {
             ) : (
               <div className="divide-y divide-slate-100">
                 {pendingPayments.map((item) => (
-                  <div key={item.id} className="py-3.5 flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-semibold text-[#0b1c30]">{item.note || 'Payment Submission'}</p>
-                      <p className="text-xs text-[#767586]">{item.date} • {item.type} Method • ₹{item.amount}</p>
+                  <div key={item.id} className="py-3.5 flex items-center justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-[#0b1c30] truncate">
+                        {item.user?.fullName || 'Resident'} — {item.note || 'Payment Submission'}
+                      </p>
+                      <p className="text-xs text-[#767586]">{item.date} • {item.type} • ₹{item.amount}</p>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {item.screenshotPath && (
+                        <button
+                          onClick={() => handleViewProof(item.id)}
+                          className="btn-secondary text-xs py-1 px-2.5"
+                          title="View Screenshot"
+                        >
+                          <Image className="w-3.5 h-3.5" /> Proof
+                        </button>
+                      )}
                       <button
                         onClick={() => handleVerifyPayment(item.id, 'APPROVED')}
-                        className="btn-primary text-xs py-1.5 px-3 bg-[#006c49] hover:bg-[#005438]"
+                        className="btn-primary text-xs py-1.5 px-3 bg-[#006c49] hover:bg-[#005438] shadow-[#006c49]/20"
                       >
                         <CheckCircle2 className="w-3.5 h-3.5" /> Approve
                       </button>
@@ -294,7 +323,7 @@ export const AdminView: React.FC = () => {
                       <p className="text-xs text-[#767586]">{m.email} • Role: <span className="font-semibold capitalize">{m.role.toLowerCase()}</span></p>
                     </div>
 
-                    {m.role !== 'SUPER_ADMIN' && user?.role === 'SUPER_ADMIN' && (
+                    {m.role !== 'SUPER_ADMIN' && (user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN') && m.id !== user?.id && (
                       <button
                         onClick={() => handleRoleChange(m.id, m.role)}
                         className={`text-xs px-3 py-1.5 rounded-xl border font-semibold transition-all ${
@@ -336,6 +365,23 @@ export const AdminView: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Screenshot Proof Viewer Modal */}
+      {viewingProof && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl p-4 max-w-lg w-full space-y-3 shadow-xl">
+            <div className="flex justify-between items-center">
+              <h3 className="font-bold text-sm text-[#0b1c30]">Payment Screenshot Proof</h3>
+              <button onClick={() => setViewingProof(null)} className="text-slate-400 hover:text-slate-600 text-xs px-2 py-1 border border-slate-200 rounded-lg">Close</button>
+            </div>
+            <img
+              src={viewingProof}
+              alt="Payment Proof Screenshot"
+              className="w-full max-h-96 object-contain rounded-xl border border-slate-200"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

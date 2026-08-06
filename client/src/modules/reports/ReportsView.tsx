@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart3, Download, FileSpreadsheet, FileText, PieChart } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
+import { api } from '../../lib/api';
 
 export const ReportsView: React.FC = () => {
   const { user } = useAuthStore();
@@ -20,6 +21,7 @@ export const ReportsView: React.FC = () => {
     categories: [],
   });
 
+  const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -27,11 +29,8 @@ export const ReportsView: React.FC = () => {
       if (!user?.id) return;
       setIsLoading(true);
       try {
-        const res = await fetch(`/api/reports/monthly?userId=${user.id}`);
-        if (res.ok) {
-          const data = await res.json();
-          setReport(data);
-        }
+        const data = await api.get(`/reports/monthly?month=${selectedMonth}`);
+        setReport(data);
       } catch (err) {
         console.error('Failed to fetch report data:', err);
       } finally {
@@ -39,7 +38,7 @@ export const ReportsView: React.FC = () => {
       }
     }
     loadReport();
-  }, [user?.id]);
+  }, [user?.id, selectedMonth]);
 
   const handleDownloadCSV = () => {
     const csvContent = "data:text/csv;charset=utf-8," 
@@ -69,11 +68,17 @@ export const ReportsView: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3">
+          <input
+            type="month"
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(e.target.value)}
+            className="input-field cursor-pointer text-sm w-40"
+          />
           <button onClick={() => window.print()} className="btn-primary text-xs">
-            <FileText className="w-4 h-4" /> Download Statement (PDF)
+            <FileText className="w-4 h-4" /> Download PDF
           </button>
           <button onClick={handleDownloadCSV} className="btn-secondary text-xs">
-            <FileSpreadsheet className="w-4 h-4" /> Export CSV Data
+            <FileSpreadsheet className="w-4 h-4" /> Export CSV
           </button>
         </div>
       </div>
@@ -114,7 +119,7 @@ export const ReportsView: React.FC = () => {
         {/* Monthly Summary Box */}
         <div className="stitch-card p-6 bg-white space-y-4 flex flex-col justify-between">
           <div>
-            <h3 className="font-display font-bold text-base text-[#0b1c30]">August 2026 Audit Summary</h3>
+            <h3 className="font-display font-bold text-base text-[#0b1c30]">{new Date(selectedMonth + '-01').toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })} Audit Summary</h3>
             <p className="text-xs text-[#767586] mt-0.5">Generated snapshot statement for Hostel Warden submission.</p>
 
             <div className="mt-6 space-y-3 text-xs">
