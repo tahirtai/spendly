@@ -165,8 +165,8 @@ For comprehensive setup details, see [docs/SETUP.md](docs/SETUP.md).
 | `PORT` | Server | Express API server port | `5000` |
 | `CLIENT_URL` | Server | Allowed CORS client origin | `http://localhost:5173` |
 | `SUPABASE_URL` | Server | Supabase project URL | `https://xyz.supabase.co` |
-| `SUPABASE_ANON_KEY` | Server | Supabase public anon key | `eyJhbGci...` |
-| `SUPABASE_SERVICE_ROLE_KEY` | Server | Supabase service role admin key | `eyJhbGci...` |
+| `SUPABASE_ANON_KEY` | Server | Supabase public anon key | `<your_supabase_anon_key>` |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server | Supabase service role admin key | `<your_supabase_service_role_key>` |
 | `DATABASE_URL` | Server | Direct PostgreSQL connection string | `postgresql://...` |
 | `VITE_API_URL` | Client | Frontend API base URL | `http://localhost:5000` |
 
