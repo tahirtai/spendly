@@ -132,11 +132,13 @@ export const TiffinView: React.FC = () => {
 
   const recordedDayMap = new Set(
     monthMeals.map((m) => {
-      const d = new Date(m.date);
-      return d.getUTCDate();
+      if (!m || !m.date) return -1;
+      const dateStr = String(m.date).slice(0, 10);
+      const parts = dateStr.split('-');
+      return parts.length === 3 ? parseInt(parts[2], 10) : -1;
     })
   );
-  const todayDay = new Date().getDate();
+  const todayDay = parseInt(today.split('-')[2], 10);
 
   return (
     <div className="space-y-8 p-6 max-w-7xl mx-auto">
@@ -288,10 +290,26 @@ export const TiffinView: React.FC = () => {
         <div className="grid grid-cols-7 gap-2 pt-2">
           {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((day) => {
             const isRecorded = recordedDayMap.has(day);
-            const isToday = displayMonth === currentMonth && day === todayDay;
-            const isMissing = displayMonth === currentMonth && !isRecorded && day < todayDay;
             const dayStr = `${displayMonth}-${String(day).padStart(2, '0')}`;
+            const isToday = dayStr === today;
+            const isMissing = displayMonth === currentMonth && !isRecorded && day < todayDay;
             const isSelected = selectedDate === dayStr;
+
+            let statusClass = 'bg-[#f8f9ff] text-[#464554] border-slate-200 hover:border-slate-300';
+            let statusBadge = null;
+
+            if (isRecorded) {
+              statusClass = isToday
+                ? 'bg-[#e6f9f1] text-[#006c49] border-[#006c49] ring-2 ring-[#006c49] shadow-sm hover:bg-[#d1f4e5]'
+                : 'bg-[#e6f9f1] text-[#006c49] border-[#6ffbbe] hover:bg-[#d1f4e5]';
+              statusBadge = <span className="block text-[10px] text-[#006c49] font-medium mt-0.5">Logged</span>;
+            } else if (isToday) {
+              statusClass = 'bg-[#4648d4] text-white border-[#4648d4] shadow-md hover:bg-[#3b3dbf]';
+              statusBadge = <span className="block text-[10px] text-white/80 font-medium mt-0.5">Today</span>;
+            } else if (isMissing) {
+              statusClass = 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100';
+              statusBadge = <span className="block text-[10px] text-amber-700 font-medium mt-0.5">Missing</span>;
+            }
 
             return (
               <button
@@ -299,20 +317,12 @@ export const TiffinView: React.FC = () => {
                 onClick={() => setSelectedDate(dayStr)}
                 className={`p-3 rounded-xl text-center border transition-all text-xs font-bold ${
                   isSelected
-                    ? 'ring-2 ring-[#4648d4] ring-offset-1'
+                    ? 'ring-2 ring-[#4648d4] ring-offset-2'
                     : ''
-                } ${
-                  isToday
-                    ? 'bg-[#4648d4] text-white border-[#4648d4] shadow-md'
-                    : isRecorded
-                    ? 'bg-[#e6f9f1] text-[#006c49] border-[#6ffbbe] hover:bg-[#d1f4e5]'
-                    : isMissing
-                    ? 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100'
-                    : 'bg-[#f8f9ff] text-[#464554] border-slate-200 hover:border-slate-300'
-                }`}
+                } ${statusClass}`}
               >
                 {day}
-                {isMissing && <span className="block text-[10px] text-amber-700 font-medium mt-0.5">Missing</span>}
+                {statusBadge}
               </button>
             );
           })}

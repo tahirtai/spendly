@@ -314,10 +314,13 @@ router.get('/dashboard/summary', requireAuth, async (req: Request, res: Response
     const remainingBalance = Math.max(0, currentMonthTotal - totalPayments);
 
     const todayNum = new Date().getDate();
-    const recordedDays = new Set(monthMeals.map(m => {
-      const d = new Date(m.date);
-      return d.getUTCDate();
-    }));
+    const recordedDays = new Set(
+      monthMeals.map(m => {
+        const dateStr = String(m.date || '').slice(0, 10);
+        const parts = dateStr.split('-');
+        return parts.length === 3 ? parseInt(parts[2], 10) : -1;
+      })
+    );
     let missingEntries = 0;
     for (let day = 1; day < todayNum; day++) {
       if (!recordedDays.has(day)) missingEntries++;
@@ -445,7 +448,9 @@ router.get('/meals/missing', requireAuth, async (req: Request, res: Response) =>
       .eq('userId', userId)
       .like('date', `${month}%`);
 
-    const recordedDates = new Set((meals || []).map(m => m.date));
+    const recordedDates = new Set(
+      (meals || []).map(m => String(m.date || '').slice(0, 10))
+    );
     const today = new Date();
     const year = parseInt(month.split('-')[0]);
     const monthNum = parseInt(month.split('-')[1]);
