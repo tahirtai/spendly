@@ -69,8 +69,8 @@ async function getOrCreateWorkspace() {
         // Seed default meal prices
         await supabase_js_1.supabaseAdmin.from('MealPrice').insert([{
                 workspaceId: ws.id,
-                halfPrice: 40,
-                fullPrice: 60
+                halfPrice: 50,
+                fullPrice: 80
             }]);
     }
     return ws;
@@ -274,8 +274,9 @@ router.get('/dashboard/summary', requireAuth, async (req, res) => {
         const remainingBalance = Math.max(0, currentMonthTotal - totalPayments);
         const todayNum = new Date().getDate();
         const recordedDays = new Set(monthMeals.map(m => {
-            const d = new Date(m.date);
-            return d.getUTCDate();
+            const dateStr = String(m.date || '').slice(0, 10);
+            const parts = dateStr.split('-');
+            return parts.length === 3 ? parseInt(parts[2], 10) : -1;
         }));
         let missingEntries = 0;
         for (let day = 1; day < todayNum; day++) {
@@ -336,8 +337,8 @@ router.post('/meals', requireAuth, validate(spendly_shared_1.RecordMealSchema), 
             .order('effectiveFrom', { ascending: false })
             .limit(1)
             .maybeSingle();
-        const halfPrice = priceObj?.halfPrice ?? 40;
-        const fullPrice = priceObj?.fullPrice ?? 60;
+        const halfPrice = priceObj?.halfPrice ?? 50;
+        const fullPrice = priceObj?.fullPrice ?? 80;
         const lunchCost = lunch === 'FULL' ? fullPrice : lunch === 'HALF' ? halfPrice : 0;
         const dinnerCost = dinner === 'FULL' ? fullPrice : dinner === 'HALF' ? halfPrice : 0;
         const totalCost = lunchCost + dinnerCost;
@@ -374,7 +375,8 @@ router.get('/meals/month', requireAuth, async (req, res) => {
             .from('Meal')
             .select('*')
             .eq('userId', userId)
-            .like('date', `${month}%`);
+            .gte('date', `${month}-01`)
+            .lte('date', `${month}-31`);
         return res.json({ meals: meals || [] });
     }
     catch (err) {
@@ -391,8 +393,9 @@ router.get('/meals/missing', requireAuth, async (req, res) => {
             .from('Meal')
             .select('date')
             .eq('userId', userId)
-            .like('date', `${month}%`);
-        const recordedDates = new Set((meals || []).map(m => m.date));
+            .gte('date', `${month}-01`)
+            .lte('date', `${month}-31`);
+        const recordedDates = new Set((meals || []).map(m => String(m.date || '').slice(0, 10)));
         const today = new Date();
         const year = parseInt(month.split('-')[0]);
         const monthNum = parseInt(month.split('-')[1]);
@@ -853,8 +856,8 @@ router.get('/admin/prices', async (_req, res) => {
             .limit(1)
             .maybeSingle();
         return res.json({
-            halfPrice: priceObj?.halfPrice ?? 40,
-            fullPrice: priceObj?.fullPrice ?? 60,
+            halfPrice: priceObj?.halfPrice ?? 50,
+            fullPrice: priceObj?.fullPrice ?? 80,
         });
     }
     catch (err) {
@@ -887,7 +890,8 @@ router.post('/admin/prices', requireAuth, requireAdmin, validate(spendly_shared_
             .from('Meal')
             .select('*')
             .eq('workspaceId', ws.id)
-            .like('date', `${currentMonth}%`);
+            .gte('date', `${currentMonth}-01`)
+            .lte('date', `${currentMonth}-31`);
         if (activeMeals && activeMeals.length > 0 && !lockedMonths.has(currentMonth)) {
             for (const meal of activeMeals) {
                 const lunchCost = meal.lunch === 'FULL' ? fullPrice : meal.lunch === 'HALF' ? halfPrice : 0;
@@ -920,8 +924,8 @@ router.post('/admin/month-lock', requireAuth, requireAdmin, validate(spendly_sha
             for (const member of members || []) {
                 const uid = member.userId;
                 const [mealsRes, expensesRes, paymentsRes] = await Promise.all([
-                    supabase_js_1.supabaseAdmin.from('Meal').select('totalCost').eq('userId', uid).like('date', `${month}%`),
-                    supabase_js_1.supabaseAdmin.from('Expense').select('amount').eq('userId', uid).like('date', `${month}%`),
+                    supabase_js_1.supabaseAdmin.from('Meal').select('totalCost').eq('userId', uid).gte('date', `${month}-01`).lte('date', `${month}-31`),
+                    supabase_js_1.supabaseAdmin.from('Expense').select('amount').eq('userId', uid).gte('date', `${month}-01`).lte('date', `${month}-31`),
                     supabase_js_1.supabaseAdmin.from('Payment').select('amount').eq('userId', uid).eq('status', 'APPROVED'),
                 ]);
                 const mealTotal = (mealsRes.data || []).reduce((s, m) => s + (m.totalCost || 0), 0);
@@ -973,8 +977,8 @@ router.get('/reports/monthly', requireAuth, async (req, res) => {
         const userId = authUser.id;
         const month = req.query.month || new Date().toISOString().slice(0, 7);
         const [mealsRes, expensesRes, paymentsRes] = await Promise.all([
-            supabase_js_1.supabaseAdmin.from('Meal').select('*').eq('userId', userId).like('date', `${month}%`),
-            supabase_js_1.supabaseAdmin.from('Expense').select('*').eq('userId', userId).like('date', `${month}%`),
+            supabase_js_1.supabaseAdmin.from('Meal').select('*').eq('userId', userId).gte('date', `${month}-01`).lte('date', `${month}-31`),
+            supabase_js_1.supabaseAdmin.from('Expense').select('*').eq('userId', userId).gte('date', `${month}-01`).lte('date', `${month}-31`),
             supabase_js_1.supabaseAdmin.from('Payment').select('amount').eq('userId', userId).eq('status', 'APPROVED'),
         ]);
         const mealTotal = (mealsRes.data || []).reduce((acc, m) => acc + (m.totalCost || 0), 0);
@@ -1030,9 +1034,9 @@ router.get('/history/snapshot-details', requireAuth, async (req, res) => {
         const month = req.query.month || new Date().toISOString().slice(0, 7);
         const [snapshotRes, mealsRes, expensesRes, paymentsRes] = await Promise.all([
             supabase_js_1.supabaseAdmin.from('MonthlySnapshot').select('*').eq('userId', userId).eq('month', month).maybeSingle(),
-            supabase_js_1.supabaseAdmin.from('Meal').select('*').eq('userId', userId).like('date', `${month}%`).order('date', { ascending: true }),
-            supabase_js_1.supabaseAdmin.from('Expense').select('*').eq('userId', userId).like('date', `${month}%`).order('date', { ascending: true }),
-            supabase_js_1.supabaseAdmin.from('Payment').select('*').eq('userId', userId).like('date', `${month}%`).order('date', { ascending: true }),
+            supabase_js_1.supabaseAdmin.from('Meal').select('*').eq('userId', userId).gte('date', `${month}-01`).lte('date', `${month}-31`).order('date', { ascending: true }),
+            supabase_js_1.supabaseAdmin.from('Expense').select('*').eq('userId', userId).gte('date', `${month}-01`).lte('date', `${month}-31`).order('date', { ascending: true }),
+            supabase_js_1.supabaseAdmin.from('Payment').select('*').eq('userId', userId).gte('date', `${month}-01`).lte('date', `${month}-31`).order('date', { ascending: true }),
         ]);
         const snapshot = snapshotRes.data;
         const meals = mealsRes.data || [];
