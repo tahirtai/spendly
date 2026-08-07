@@ -46,8 +46,8 @@ export const AdminView: React.FC = () => {
   const currentMonth = new Date().toISOString().slice(0, 7);
   const currentMonthLabel = new Date().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
 
-  const [halfPrice, setHalfPrice] = useState(40);
-  const [fullPrice, setFullPrice] = useState(60);
+  const [halfPrice, setHalfPrice] = useState(50);
+  const [fullPrice, setFullPrice] = useState(80);
   const [isMonthLocked, setIsMonthLocked] = useState(false);
   const [saveStatus, setSaveStatus] = useState('');
   const [priceError, setPriceError] = useState('');
@@ -77,8 +77,8 @@ export const AdminView: React.FC = () => {
       ]);
 
       if (priceData) {
-        setHalfPrice(priceData.halfPrice || 40);
-        setFullPrice(priceData.fullPrice || 60);
+        setHalfPrice(priceData.halfPrice || 50);
+        setFullPrice(priceData.fullPrice || 80);
       }
       if (mData) setMembers(mData.members || []);
       if (pendingData) setPendingPayments(pendingData.pendingPayments || []);

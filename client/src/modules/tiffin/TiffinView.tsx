@@ -22,8 +22,8 @@ export const TiffinView: React.FC = () => {
   const [dinnerCost, setDinnerCost] = useState(0);
   const [totalCost, setTotalCost] = useState(0);
 
-  const [halfPrice, setHalfPrice] = useState(40);
-  const [fullPrice, setFullPrice] = useState(60);
+  const [halfPrice, setHalfPrice] = useState(50);
+  const [fullPrice, setFullPrice] = useState(80);
   const [monthMeals, setMonthMeals] = useState<any[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
@@ -37,8 +37,8 @@ export const TiffinView: React.FC = () => {
   const loadPrices = async () => {
     try {
       const prices = await api.get('/admin/prices');
-      setHalfPrice(prices.halfPrice || 40);
-      setFullPrice(prices.fullPrice || 60);
+      setHalfPrice(prices.halfPrice || 50);
+      setFullPrice(prices.fullPrice || 80);
     } catch {
       // Use defaults
     }

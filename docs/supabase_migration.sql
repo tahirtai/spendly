@@ -86,8 +86,8 @@ CREATE TABLE IF NOT EXISTS "WorkspaceMember" (
 CREATE TABLE IF NOT EXISTS "MealPrice" (
   id              uuid        PRIMARY KEY DEFAULT uuid_generate_v4(),
   "workspaceId"   uuid        NOT NULL REFERENCES "Workspace"(id) ON DELETE CASCADE,
-  "halfPrice"     float       NOT NULL DEFAULT 40,
-  "fullPrice"     float       NOT NULL DEFAULT 60,
+  "halfPrice"     float       NOT NULL DEFAULT 50,
+  "fullPrice"     float       NOT NULL DEFAULT 80,
   "effectiveFrom" timestamptz NOT NULL DEFAULT now()
 );
 

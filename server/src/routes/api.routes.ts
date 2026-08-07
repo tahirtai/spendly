@@ -85,8 +85,8 @@ async function getOrCreateWorkspace() {
     // Seed default meal prices
     await supabaseAdmin.from('MealPrice').insert([{
       workspaceId: ws.id,
-      halfPrice: 40,
-      fullPrice: 60
+      halfPrice: 50,
+      fullPrice: 80
     }]);
   }
   return ws;
@@ -383,8 +383,8 @@ router.post('/meals', requireAuth, validate(RecordMealSchema), async (req: Reque
       .limit(1)
       .maybeSingle();
 
-    const halfPrice = priceObj?.halfPrice ?? 40;
-    const fullPrice = priceObj?.fullPrice ?? 60;
+    const halfPrice = priceObj?.halfPrice ?? 50;
+    const fullPrice = priceObj?.fullPrice ?? 80;
 
     const lunchCost = lunch === 'FULL' ? fullPrice : lunch === 'HALF' ? halfPrice : 0;
     const dinnerCost = dinner === 'FULL' ? fullPrice : dinner === 'HALF' ? halfPrice : 0;
@@ -950,8 +950,8 @@ router.get('/admin/prices', async (_req: Request, res: Response) => {
       .maybeSingle();
 
     return res.json({
-      halfPrice: priceObj?.halfPrice ?? 40,
-      fullPrice: priceObj?.fullPrice ?? 60,
+      halfPrice: priceObj?.halfPrice ?? 50,
+      fullPrice: priceObj?.fullPrice ?? 80,
     });
   } catch (err: any) {
     return res.status(500).json({ error: err.message });

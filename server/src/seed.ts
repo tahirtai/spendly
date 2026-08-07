@@ -117,8 +117,8 @@ export async function seedDatabase() {
         if (!existingPrice) {
           await supabaseAdmin.from('MealPrice').insert({
             workspaceId: ws.id,
-            halfPrice: 40,
-            fullPrice: 60
+            halfPrice: 50,
+            fullPrice: 80
           });
         }
       }
