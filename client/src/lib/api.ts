@@ -4,7 +4,9 @@
  * to every request. Frontend code NEVER calls fetch() directly — always uses apiFetch().
  */
 
-const API_BASE = '/api';
+const API_BASE = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/api`
+  : '/api';
 
 function getToken(): string | null {
   try {

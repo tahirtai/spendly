@@ -792,6 +792,58 @@ router.patch('/admin/members/:id/role', requireAuth, requireAdmin, validate(Upda
   }
 });
 
+// DELETE /api/admin/members/:id — Remove resident user account while preserving payment audit history
+router.delete('/admin/members/:id', requireAuth, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const actorUser = (req as any).dbUser;
+    const authUser = (req as any).authUser;
+    const targetUserId = req.params.id;
+
+    if (targetUserId === authUser.id) {
+      return res.status(400).json({ error: 'You cannot delete your own account.' });
+    }
+
+    // Check target user
+    const { data: targetUser } = await supabaseAdmin.from('User').select('role, fullName').eq('id', targetUserId).single();
+    if (!targetUser) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    if (targetUser.role === 'SUPER_ADMIN') {
+      return res.status(403).json({ error: 'Super Admin accounts cannot be deleted.' });
+    }
+
+    if (actorUser.role === 'ADMIN' && targetUser.role === 'ADMIN') {
+      return res.status(403).json({ error: 'Admins cannot delete other Admin accounts. Super Admin required.' });
+    }
+
+    // Remove from active WorkspaceMember (removes from active resident list)
+    await supabaseAdmin.from('WorkspaceMember').delete().eq('userId', targetUserId);
+
+    // Clean up meals, expenses, snapshots (preserving Payment records for audit history)
+    await Promise.all([
+      supabaseAdmin.from('Meal').delete().eq('userId', targetUserId),
+      supabaseAdmin.from('Expense').delete().eq('userId', targetUserId),
+      supabaseAdmin.from('MonthlySnapshot').delete().eq('userId', targetUserId),
+    ]);
+
+    // Update User record to indicate Deleted Resident status so payment audit log retains name
+    const updatedName = targetUser.fullName.includes('(Deleted)') ? targetUser.fullName : `${targetUser.fullName} (Deleted)`;
+    await supabaseAdmin.from('User').update({ fullName: updatedName }).eq('id', targetUserId);
+
+    // Revoke Supabase Auth credentials
+    try {
+      await supabaseAdmin.auth.admin.deleteUser(targetUserId);
+    } catch (authErr: any) {
+      console.warn('[Delete Auth User Warning]:', authErr.message);
+    }
+
+    return res.json({ success: true, message: `User ${targetUser.fullName} deleted successfully. Payment audit history preserved.` });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/admin/pending-payments
 router.get('/admin/pending-payments', requireAuth, requireAdmin, async (req: Request, res: Response) => {
   try {
@@ -804,7 +856,62 @@ router.get('/admin/pending-payments', requireAuth, requireAdmin, async (req: Req
       .order('createdAt', { ascending: false });
 
     if (error) return res.status(400).json({ error: error.message });
-    return res.json({ pendingPayments: pending || [] });
+
+    const paymentsWithProofs = await Promise.all(
+      (pending || []).map(async (item: any) => {
+        let proofUrl = null;
+        if (item.screenshotPath) {
+          try {
+            const { data } = await supabaseAdmin.storage
+              .from('payment-proofs')
+              .createSignedUrl(item.screenshotPath, 3600);
+            proofUrl = data?.signedUrl || null;
+          } catch {
+            proofUrl = null;
+          }
+        }
+        const userObj = item.user || { fullName: 'Deleted Resident', email: 'N/A' };
+        return { ...item, user: userObj, proofUrl };
+      })
+    );
+
+    return res.json({ pendingPayments: paymentsWithProofs });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/admin/payment-history — Complete payment verification audit log
+router.get('/admin/payment-history', requireAuth, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const ws = await getOrCreateWorkspace();
+    const { data: history, error } = await supabaseAdmin
+      .from('Payment')
+      .select('*, user:User(fullName, email)')
+      .eq('workspaceId', ws.id)
+      .order('createdAt', { ascending: false });
+
+    if (error) return res.status(400).json({ error: error.message });
+
+    const paymentsWithProofs = await Promise.all(
+      (history || []).map(async (item: any) => {
+        let proofUrl = null;
+        if (item.screenshotPath) {
+          try {
+            const { data } = await supabaseAdmin.storage
+              .from('payment-proofs')
+              .createSignedUrl(item.screenshotPath, 3600);
+            proofUrl = data?.signedUrl || null;
+          } catch {
+            proofUrl = null;
+          }
+        }
+        const userObj = item.user || { fullName: 'Deleted Resident', email: 'N/A' };
+        return { ...item, user: userObj, proofUrl };
+      })
+    );
+
+    return res.json({ payments: paymentsWithProofs });
   } catch (err: any) {
     return res.status(500).json({ error: err.message });
   }
@@ -851,20 +958,52 @@ router.get('/admin/prices', async (_req: Request, res: Response) => {
   }
 });
 
-// POST /api/admin/prices
+// POST /api/admin/prices — Update meal rates across active billing period while preserving locked history
 router.post('/admin/prices', requireAuth, requireAdmin, validate(UpdateMealPricesSchema), async (req: Request, res: Response) => {
   try {
     const { halfPrice, fullPrice } = req.body;
     const ws = await getOrCreateWorkspace();
+    const currentMonth = new Date().toISOString().slice(0, 7);
 
-    const { data, error } = await supabaseAdmin
+    // 1. Insert new MealPrice entry
+    const { data: priceData, error } = await supabaseAdmin
       .from('MealPrice')
       .insert([{ workspaceId: ws.id, halfPrice, fullPrice }])
       .select()
       .single();
 
     if (error) return res.status(400).json({ error: error.message });
-    return res.json({ success: true, prices: data });
+
+    // 2. Query locked months to protect older historical snapshots
+    const { data: lockedSnapshots } = await supabaseAdmin
+      .from('MonthlySnapshot')
+      .select('month')
+      .eq('workspaceId', ws.id)
+      .eq('isLocked', true);
+
+    const lockedMonths = new Set((lockedSnapshots || []).map((s: any) => s.month));
+
+    // 3. Update current active/unlocked meals so the new price applies everywhere immediately
+    const { data: activeMeals } = await supabaseAdmin
+      .from('Meal')
+      .select('*')
+      .eq('workspaceId', ws.id)
+      .like('date', `${currentMonth}%`);
+
+    if (activeMeals && activeMeals.length > 0 && !lockedMonths.has(currentMonth)) {
+      for (const meal of activeMeals) {
+        const lunchCost = meal.lunch === 'FULL' ? fullPrice : meal.lunch === 'HALF' ? halfPrice : 0;
+        const dinnerCost = meal.dinner === 'FULL' ? fullPrice : meal.dinner === 'HALF' ? halfPrice : 0;
+        const totalCost = lunchCost + dinnerCost;
+
+        await supabaseAdmin
+          .from('Meal')
+          .update({ lunchCost, dinnerCost, totalCost, updatedAt: new Date().toISOString() })
+          .eq('id', meal.id);
+      }
+    }
+
+    return res.json({ success: true, prices: priceData });
   } catch (err: any) {
     return res.status(500).json({ error: err.message });
   }
@@ -993,6 +1132,67 @@ router.get('/history', requireAuth, async (req: Request, res: Response) => {
 
     if (error) return res.status(400).json({ error: error.message });
     return res.json({ history: snapshots || [] });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/history/snapshot-details?month=YYYY-MM
+router.get('/history/snapshot-details', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const authUser = (req as any).authUser;
+    const userId = authUser.id;
+    const month = (req.query.month as string) || new Date().toISOString().slice(0, 7);
+
+    const [snapshotRes, mealsRes, expensesRes, paymentsRes] = await Promise.all([
+      supabaseAdmin.from('MonthlySnapshot').select('*').eq('userId', userId).eq('month', month).maybeSingle(),
+      supabaseAdmin.from('Meal').select('*').eq('userId', userId).like('date', `${month}%`).order('date', { ascending: true }),
+      supabaseAdmin.from('Expense').select('*').eq('userId', userId).like('date', `${month}%`).order('date', { ascending: true }),
+      supabaseAdmin.from('Payment').select('*').eq('userId', userId).like('date', `${month}%`).order('date', { ascending: true }),
+    ]);
+
+    const snapshot = snapshotRes.data;
+    const meals = mealsRes.data || [];
+    const expenses = expensesRes.data || [];
+    const rawPayments = paymentsRes.data || [];
+
+    const payments = await Promise.all(
+      rawPayments.map(async (p) => {
+        let proofUrl = null;
+        if (p.screenshotPath) {
+          try {
+            const { data } = await supabaseAdmin.storage
+              .from('payment-proofs')
+              .createSignedUrl(p.screenshotPath, 3600);
+            proofUrl = data?.signedUrl || null;
+          } catch {
+            proofUrl = null;
+          }
+        }
+        return { ...p, proofUrl };
+      })
+    );
+
+    const mealTotal = meals.reduce((s, m) => s + (m.totalCost || 0), 0);
+    const expenseTotal = expenses.reduce((s, e) => s + (e.amount || 0), 0);
+    const paymentTotal = payments.filter((p) => p.status === 'APPROVED').reduce((s, p) => s + (p.amount || 0), 0);
+    const totalSpent = mealTotal + expenseTotal;
+    const balanceDue = Math.max(0, totalSpent - paymentTotal);
+
+    return res.json({
+      month,
+      snapshot,
+      meals,
+      expenses,
+      payments,
+      totals: {
+        mealTotal: snapshot ? snapshot.mealTotal : mealTotal,
+        expenseTotal: snapshot ? snapshot.expenseTotal : expenseTotal,
+        paymentTotal: snapshot ? snapshot.paymentTotal : paymentTotal,
+        totalSpent,
+        balanceDue: snapshot ? snapshot.balanceDue : balanceDue,
+      },
+    });
   } catch (err: any) {
     return res.status(500).json({ error: err.message });
   }

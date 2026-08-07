@@ -15,9 +15,12 @@ import {
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../../store/useAuthStore';
 import { api } from '../../lib/api';
+import { useAutoDate } from '../../lib/dateUtils';
 
 export const DashboardView: React.FC = () => {
   const { user } = useAuthStore();
+  const { today } = useAutoDate();
+
   const [metrics, setMetrics] = useState({
     currentMonthTotal: 0,
     remainingBalance: 0,
@@ -28,7 +31,7 @@ export const DashboardView: React.FC = () => {
   });
 
   const [todayMeal, setTodayMeal] = useState({
-    date: new Date().toISOString().split('T')[0],
+    date: today,
     lunch: 'SKIP',
     dinner: 'SKIP',
     lunchCost: 0,
@@ -40,6 +43,7 @@ export const DashboardView: React.FC = () => {
   const [isSavingMeal, setIsSavingMeal] = useState(false);
 
   const currentMonthLabel = new Date().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+
 
   const loadDashboard = async () => {
     if (!user?.id) return;

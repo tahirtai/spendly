@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { CreditCard, Upload, CheckCircle2, Trash2, Smartphone, Banknote, AlertCircle, X, Image } from 'lucide-react';
+import { CreditCard, Upload, CheckCircle2, Trash2, Smartphone, Banknote, AlertCircle, X, Image, Loader2 } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { api, ApiError } from '../../lib/api';
 import { SubmitPaymentSchema } from 'spendly-shared';
+import { useAutoDate } from '../../lib/dateUtils';
 
 interface PaymentRecord {
   id: string;
@@ -16,12 +17,19 @@ interface PaymentRecord {
 
 export const PaymentsView: React.FC = () => {
   const { user } = useAuthStore();
+  const { today } = useAutoDate();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [paymentType, setPaymentType] = useState<'CASH' | 'UPI'>('UPI');
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
-  const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
+  const [paymentDate, setPaymentDate] = useState(today);
+
+  // Sync date when today changes at midnight
+  useEffect(() => {
+    setPaymentDate(today);
+  }, [today]);
+
   const [paymentsList, setPaymentsList] = useState<PaymentRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -53,6 +61,25 @@ export const PaymentsView: React.FC = () => {
     fetchPayments();
   }, [fetchPayments]);
 
+  const uploadSelectedFile = async (file: File) => {
+    setIsUploading(true);
+    setFormErrors({});
+    setUploadedPath(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('screenshot', file);
+
+      const data = await api.uploadFile<{ success: boolean; path: string }>('/payments/upload-proof', formData);
+      setUploadedPath(data.path);
+    } catch (err: any) {
+      setUploadedPath(null);
+      setFormErrors({ file: err instanceof ApiError ? err.message : 'Upload failed. Please try again.' });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -73,31 +100,16 @@ export const PaymentsView: React.FC = () => {
     setSelectedFile(file);
     setFilePreview(URL.createObjectURL(file));
     setFormErrors({});
-    setUploadedPath(null);
-  };
 
-  const handleUploadFile = async () => {
-    if (!selectedFile) return;
-    setIsUploading(true);
-    setFormErrors({});
-
-    try {
-      const formData = new FormData();
-      formData.append('screenshot', selectedFile);
-
-      const data = await api.uploadFile<{ success: boolean; path: string }>('/payments/upload-proof', formData);
-      setUploadedPath(data.path);
-    } catch (err: any) {
-      setFormErrors({ file: err instanceof ApiError ? err.message : 'Upload failed. Please try again.' });
-    } finally {
-      setIsUploading(false);
-    }
+    // Auto upload file immediately
+    uploadSelectedFile(file);
   };
 
   const handleClearFile = () => {
     setSelectedFile(null);
     setFilePreview(null);
     setUploadedPath(null);
+    setIsUploading(false);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -106,9 +118,14 @@ export const PaymentsView: React.FC = () => {
     setFormErrors({});
     setSuccessMsg('');
 
+    if (isUploading) {
+      setFormErrors({ file: 'Please wait for the screenshot upload to complete.' });
+      return;
+    }
+
     // Validate UPI requires screenshot upload
-    if (paymentType === 'UPI' && selectedFile && !uploadedPath) {
-      setFormErrors({ file: 'Please upload the UPI screenshot before submitting.' });
+    if (paymentType === 'UPI' && !uploadedPath) {
+      setFormErrors({ file: 'UPI payment requires a valid uploaded screenshot proof.' });
       return;
     }
 
@@ -134,7 +151,7 @@ export const PaymentsView: React.FC = () => {
       await api.post('/payments', result.data);
       setAmount('');
       setNote('');
-      setPaymentDate(new Date().toISOString().split('T')[0]);
+      setPaymentDate(today);
       handleClearFile();
       setSuccessMsg('Payment submitted successfully and pending verification!');
       setTimeout(() => setSuccessMsg(''), 4000);
@@ -158,23 +175,21 @@ export const PaymentsView: React.FC = () => {
 
   return (
     <div className="space-y-8 p-6 max-w-7xl mx-auto">
-      {/* Light Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-200 pb-6">
-        <div>
-          <h1 className="font-display text-2xl md:text-3xl font-bold text-[#0b1c30] flex items-center gap-3">
-            <CreditCard className="w-8 h-8 text-[#4648d4]" />
-            Payment Tracking &amp; Proof Upload
-          </h1>
-          <p className="text-[#464554] text-xs mt-1">
-            Submit Cash or UPI payments with transaction screenshots for warden verification.
-          </p>
-        </div>
+      {/* Header */}
+      <div className="border-b border-slate-200 pb-6">
+        <h1 className="font-display text-2xl md:text-3xl font-bold text-[#0b1c30] flex items-center gap-3">
+          <CreditCard className="w-8 h-8 text-[#4648d4]" />
+          Record Payments &amp; UPI Verification
+        </h1>
+        <p className="text-[#464554] text-xs mt-1">
+          Submit UPI screenshot proofs or record cash payments for warden approval.
+        </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Payment Submission Form */}
-        <div className="stitch-card p-6 bg-white space-y-5 h-fit">
-          <h2 className="font-display font-bold text-base text-[#0b1c30]">Record New Payment</h2>
+        <div className="stitch-card p-6 bg-white space-y-4">
+          <h2 className="font-display font-bold text-base text-[#0b1c30]">Submit New Payment</h2>
 
           {formErrors.form && (
             <div className="bg-rose-50 border border-rose-200 text-rose-600 text-xs p-3 rounded-xl flex items-center gap-2">
@@ -194,7 +209,10 @@ export const PaymentsView: React.FC = () => {
           <div className="grid grid-cols-2 gap-2 p-1 bg-[#f8f9ff] rounded-xl border border-slate-200">
             <button
               type="button"
-              onClick={() => setPaymentType('UPI')}
+              onClick={() => {
+                setPaymentType('UPI');
+                setFormErrors({});
+              }}
               className={`py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
                 paymentType === 'UPI' ? 'bg-[#4648d4] text-white shadow-md' : 'text-[#464554] hover:text-[#0b1c30]'
               }`}
@@ -203,7 +221,10 @@ export const PaymentsView: React.FC = () => {
             </button>
             <button
               type="button"
-              onClick={() => setPaymentType('CASH')}
+              onClick={() => {
+                setPaymentType('CASH');
+                setFormErrors({});
+              }}
               className={`py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
                 paymentType === 'CASH' ? 'bg-[#4648d4] text-white shadow-md' : 'text-[#464554] hover:text-[#0b1c30]'
               }`}
@@ -253,44 +274,58 @@ export const PaymentsView: React.FC = () => {
             {paymentType === 'UPI' && (
               <div>
                 <label className="text-xs font-semibold text-[#464554] block mb-1">
-                  UPI Screenshot Proof <span className="text-slate-400 font-normal">(PNG, JPEG ≤ 5MB)</span>
+                  UPI Screenshot Proof <span className="text-rose-500 font-bold">*Required</span>
                 </label>
 
                 {formErrors.file && (
-                  <p className="text-rose-500 text-[11px] mb-2">{formErrors.file}</p>
+                  <div className="bg-rose-50 border border-rose-200 text-rose-600 text-xs p-2.5 rounded-lg mb-2 flex items-center gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                    <span>{formErrors.file}</span>
+                  </div>
                 )}
 
-                {/* File preview */}
+                {/* File preview & upload status */}
                 {filePreview ? (
-                  <div className="relative rounded-xl overflow-hidden border border-[#e2e8f0] mb-2">
-                    <img src={filePreview} alt="Screenshot preview" className="w-full h-40 object-cover" />
-                    <button
-                      type="button"
-                      onClick={handleClearFile}
-                      className="absolute top-2 right-2 bg-rose-500 text-white rounded-full p-1 shadow-md"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                    {uploadedPath ? (
-                      <div className="absolute bottom-2 left-2 bg-emerald-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
-                        <CheckCircle2 className="w-3 h-3" /> Uploaded
-                      </div>
-                    ) : (
+                  <div className="relative rounded-xl overflow-hidden border border-slate-200 mb-2 bg-slate-50 p-2">
+                    <div className="relative h-44 rounded-lg overflow-hidden border border-slate-200">
+                      <img src={filePreview} alt="Screenshot preview" className="w-full h-full object-cover" />
                       <button
                         type="button"
-                        onClick={handleUploadFile}
-                        disabled={isUploading}
-                        className="absolute bottom-2 left-2 bg-[#4648d4] text-white text-[10px] px-3 py-1 rounded-full font-bold flex items-center gap-1"
+                        onClick={handleClearFile}
+                        className="absolute top-2 right-2 bg-rose-600 text-white rounded-full p-1 shadow-md hover:bg-rose-700 transition-all"
+                        title="Remove screenshot"
                       >
-                        {isUploading ? 'Uploading...' : 'Upload Now'}
+                        <X className="w-4 h-4" />
                       </button>
-                    )}
+                    </div>
+
+                    <div className="mt-2 flex items-center justify-between px-1 text-xs">
+                      {isUploading ? (
+                        <div className="flex items-center gap-2 text-indigo-600 font-semibold">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Uploading screenshot to Supabase Storage...</span>
+                        </div>
+                      ) : uploadedPath ? (
+                        <div className="flex items-center gap-1.5 text-emerald-600 font-semibold">
+                          <CheckCircle2 className="w-4 h-4" />
+                          <span>Uploaded successfully</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5 text-rose-600 font-semibold">
+                          <AlertCircle className="w-4 h-4" />
+                          <span>Upload failed. Please re-select file.</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ) : (
-                  <label className="border-2 border-dashed border-slate-200 hover:border-[#4648d4]/50 rounded-xl p-5 text-center cursor-pointer transition-all bg-[#f8f9ff] block">
-                    <Upload className="w-7 h-7 text-[#4648d4] mx-auto mb-1.5" />
-                    <p className="text-xs text-[#0b1c30] font-semibold">Click to upload UPI screenshot</p>
-                    <p className="text-[10px] text-[#767586] mt-0.5">PNG, JPG or WEBP up to 5MB</p>
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="border-2 border-dashed border-slate-200 hover:border-[#4648d4] rounded-xl p-6 text-center cursor-pointer transition-all bg-[#f8f9ff]"
+                  >
+                    <Upload className="w-6 h-6 text-slate-400 mx-auto mb-2" />
+                    <p className="text-xs font-semibold text-[#0b1c30]">Click to select payment screenshot</p>
+                    <p className="text-[11px] text-[#767586] mt-0.5">PNG, JPEG or WEBP (Max 5MB)</p>
                     <input
                       ref={fileInputRef}
                       type="file"
@@ -298,79 +333,69 @@ export const PaymentsView: React.FC = () => {
                       onChange={handleFileSelect}
                       className="hidden"
                     />
-                  </label>
+                  </div>
                 )}
               </div>
             )}
 
-            <button type="submit" disabled={isSubmitting} className="btn-primary w-full mt-2">
-              {isSubmitting ? 'Submitting...' : 'Submit Payment for Verification'}
+            <button
+              type="submit"
+              disabled={isSubmitting || isUploading || (paymentType === 'UPI' && !uploadedPath)}
+              className="btn-primary w-full text-xs py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span>
+                {isSubmitting
+                  ? 'Submitting Payment...'
+                  : isUploading
+                  ? 'Uploading Screenshot...'
+                  : 'Submit Payment'}
+              </span>
             </button>
           </form>
         </div>
 
-        {/* Payments History Table */}
+        {/* Payment History List */}
         <div className="lg:col-span-2 stitch-card p-6 bg-white space-y-4">
-          <h3 className="font-display font-bold text-base text-[#0b1c30]">Payment Submission History</h3>
+          <h2 className="font-display font-bold text-base text-[#0b1c30]">My Payment History</h2>
 
           {isLoading ? (
-            <p className="text-xs text-[#767586] text-center py-8">Loading payment records...</p>
+            <p className="text-xs text-[#767586] text-center py-8">Loading payments...</p>
           ) : paymentsList.length === 0 ? (
-            <div className="py-12 text-center space-y-3">
-              <div className="w-12 h-12 rounded-2xl bg-[#eff4ff] text-[#4648d4] flex items-center justify-center mx-auto">
-                <CreditCard className="w-6 h-6" />
-              </div>
-              <h3 className="font-display font-bold text-base text-[#0b1c30]">No Payments Submitted Yet</h3>
-              <p className="text-xs text-[#767586] max-w-sm mx-auto">
-                No payment receipts found. Submit cash or UPI payments to settle outstanding dues.
-              </p>
-            </div>
+            <p className="text-xs text-[#767586] text-center py-8">No payment records submitted yet.</p>
           ) : (
             <div className="divide-y divide-slate-100">
               {paymentsList.map((item) => (
-                <div key={item.id} className="py-3.5 flex items-center justify-between">
-                  <div className="flex items-center gap-3.5">
-                    <div className="w-9 h-9 rounded-xl bg-[#eff4ff] border border-[#d3e4fe] flex items-center justify-center font-bold text-[#4648d4]">
-                      {item.type === 'UPI' ? <Smartphone className="w-4 h-4" /> : <Banknote className="w-4 h-4" />}
+                <div key={item.id} className="py-4 flex items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-[#0b1c30] text-sm">₹{item.amount}</span>
+                      <span className="text-xs bg-slate-100 text-[#464554] px-2 py-0.5 rounded-full font-semibold border border-slate-200">
+                        {item.type}
+                      </span>
+                      <span
+                        className={`text-xs px-2.5 py-0.5 rounded-full font-bold ${
+                          item.status === 'APPROVED'
+                            ? 'bg-emerald-50 text-[#006c49] border border-emerald-200'
+                            : item.status === 'REJECTED'
+                            ? 'bg-rose-50 text-rose-600 border border-rose-200'
+                            : 'bg-amber-50 text-amber-700 border border-amber-200'
+                        }`}
+                      >
+                        {item.status}
+                      </span>
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-semibold text-[#0b1c30]">{item.note || `${item.type} Payment`}</p>
-                        <span
-                          className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
-                            item.status === 'APPROVED'
-                              ? 'bg-emerald-50 text-[#006c49] border border-emerald-200'
-                              : item.status === 'REJECTED'
-                              ? 'bg-rose-50 text-rose-600 border border-rose-200'
-                              : 'bg-amber-50 text-amber-700 border border-amber-200'
-                          }`}
-                        >
-                          {item.status}
-                        </span>
-                      </div>
-                      <p className="text-xs text-[#767586] mt-0.5">
-                        {item.date} • {item.type} Method
-                        {item.screenshotPath && (
-                          <span className="ml-2 text-[#4648d4] font-medium flex items-center gap-0.5 inline-flex">
-                            <Image className="w-3 h-3" /> Screenshot
-                          </span>
-                        )}
-                      </p>
-                    </div>
+                    <p className="text-xs text-[#767586]">{item.date} {item.note ? `• ${item.note}` : ''}</p>
                   </div>
 
-                  <div className="flex items-center gap-3">
-                    <span className="font-display font-bold text-base text-[#006c49]">+₹{item.amount}</span>
-                    {item.status === 'PENDING' && (
-                      <button
-                        onClick={() => handleDeletePayment(item.id)}
-                        className="p-1 text-slate-400 hover:text-rose-600 transition-colors"
-                        title="Delete Record"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
+                  {item.status === 'PENDING' && (
+                    <button
+                      onClick={() => handleDeletePayment(item.id)}
+                      className="text-slate-400 hover:text-rose-500 p-1.5 rounded-lg transition-colors"
+                      title="Delete pending payment"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
               ))}
             </div>

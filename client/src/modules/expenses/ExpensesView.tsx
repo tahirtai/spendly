@@ -3,6 +3,7 @@ import { Receipt, Plus, Trash2, Edit2, Search, ChevronLeft, ChevronRight, Tag, X
 import { useAuthStore } from '../../store/useAuthStore';
 import { api, ApiError } from '../../lib/api';
 import { CreateExpenseSchema, UpdateExpenseSchema } from 'spendly-shared';
+import { useAutoDate } from '../../lib/dateUtils';
 
 interface ExpenseItem {
   id: string;
@@ -16,6 +17,8 @@ const DEFAULT_CATEGORIES = ['Food', 'Tea', 'Snacks', 'Grocery', 'Laundry', 'Trav
 
 export const ExpensesView: React.FC = () => {
   const { user } = useAuthStore();
+  const { today } = useAutoDate();
+
   const [expenses, setExpenses] = useState<ExpenseItem[]>([]);
   const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES);
   const [isLoading, setIsLoading] = useState(true);
@@ -31,9 +34,16 @@ export const ExpensesView: React.FC = () => {
   const [category, setCategory] = useState('Food');
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(today);
+
+  // Sync date when today changes at midnight
+  useEffect(() => {
+    setDate(today);
+  }, [today]);
+
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [formStatus, setFormStatus] = useState<'' | 'success' | 'error'>('');
+
 
   // Edit Modal State
   const [editingExpense, setEditingExpense] = useState<ExpenseItem | null>(null);

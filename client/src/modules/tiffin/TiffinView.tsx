@@ -2,15 +2,22 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Utensils, Calendar as CalendarIcon, CheckCircle2, Sun, Moon } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { api } from '../../lib/api';
+import { useAutoDate } from '../../lib/dateUtils';
 
 export const TiffinView: React.FC = () => {
   const { user } = useAuthStore();
-  const today = new Date().toISOString().split('T')[0];
-  const currentMonth = new Date().toISOString().slice(0, 7);
+  const { today, currentMonth } = useAutoDate();
 
   const [selectedDate, setSelectedDate] = useState(today);
+
+  // Sync selectedDate with today when today changes at midnight
+  useEffect(() => {
+    setSelectedDate((prev) => (prev.startsWith(today.slice(0, 7)) ? today : prev));
+  }, [today]);
+
   const [lunch, setLunch] = useState('SKIP');
   const [dinner, setDinner] = useState('SKIP');
+
   const [lunchCost, setLunchCost] = useState(0);
   const [dinnerCost, setDinnerCost] = useState(0);
   const [totalCost, setTotalCost] = useState(0);

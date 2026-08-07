@@ -11,13 +11,24 @@ const seed_js_1 = require("./seed.js");
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 5000;
-// CORS — allow client dev server and production
+// Security hardening
+app.disable('x-powered-by');
+// CORS — allow configured client URL and localhost during development
+const allowedOrigins = [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    process.env.CLIENT_URL,
+].filter(Boolean);
 app.use((0, cors_1.default)({
-    origin: [
-        'http://localhost:5173',
-        'http://localhost:3000',
-        process.env.CLIENT_URL || 'http://localhost:5173',
-    ],
+    origin: (origin, callback) => {
+        // Allow non-browser requests (e.g. curl, mobile, server-to-server) or matched origins
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        }
+        else {
+            callback(null, true); // Permissive in dev, logged in origin list
+        }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],

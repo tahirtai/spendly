@@ -12,7 +12,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Image,
-  AlertCircle
+  AlertCircle,
+  Trash2,
+  History
 } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { api, ApiError } from '../../lib/api';
@@ -26,14 +28,16 @@ interface Member {
   createdAt: string;
 }
 
-interface PendingPayment {
+interface PaymentRecordItem {
   id: string;
   userId: string;
   type: string;
   amount: number;
   date: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
   note?: string;
   screenshotPath?: string | null;
+  proofUrl?: string | null;
   user?: { fullName: string; email: string };
 }
 
@@ -54,8 +58,10 @@ export const AdminView: React.FC = () => {
   const [memberPage, setMemberPage] = useState(1);
   const itemsPerPage = 5;
 
-  // Pending Payments Queue
-  const [pendingPayments, setPendingPayments] = useState<PendingPayment[]>([]);
+  // Payments State & Tab
+  const [paymentTab, setPaymentTab] = useState<'pending' | 'history'>('pending');
+  const [pendingPayments, setPendingPayments] = useState<PaymentRecordItem[]>([]);
+  const [paymentHistory, setPaymentHistory] = useState<PaymentRecordItem[]>([]);
 
   // Signed URL viewer
   const [viewingProof, setViewingProof] = useState<string | null>(null);
@@ -63,10 +69,11 @@ export const AdminView: React.FC = () => {
   // Load Admin Data
   const loadAdminData = async () => {
     try {
-      const [priceData, mData, payData] = await Promise.all([
+      const [priceData, mData, pendingData, historyData] = await Promise.all([
         api.get('/admin/prices').catch(() => null),
         api.get('/admin/members').catch(() => null),
         api.get('/admin/pending-payments').catch(() => null),
+        api.get('/admin/payment-history').catch(() => null),
       ]);
 
       if (priceData) {
@@ -74,7 +81,8 @@ export const AdminView: React.FC = () => {
         setFullPrice(priceData.fullPrice || 60);
       }
       if (mData) setMembers(mData.members || []);
-      if (payData) setPendingPayments(payData.pendingPayments || []);
+      if (pendingData) setPendingPayments(pendingData.pendingPayments || []);
+      if (historyData) setPaymentHistory(historyData.payments || []);
     } catch (err) {
       console.error('Failed to load admin data:', err);
     }
@@ -114,6 +122,18 @@ export const AdminView: React.FC = () => {
     }
   };
 
+  const handleDeleteUser = async (memberId: string, memberName: string) => {
+    if (!confirm(`Are you sure you want to permanently delete user account "${memberName}"?\n\nThis will remove all associated meals, expenses, and payments. This action cannot be undone.`)) {
+      return;
+    }
+    try {
+      await api.delete(`/admin/members/${memberId}`);
+      loadAdminData();
+    } catch (err: any) {
+      alert(err instanceof ApiError ? err.message : 'Failed to delete user.');
+    }
+  };
+
   const handleVerifyPayment = async (paymentId: string, status: 'APPROVED' | 'REJECTED') => {
     if (!confirm(`${status === 'APPROVED' ? 'Approve' : 'Reject'} this payment?`)) return;
     try {
@@ -127,9 +147,13 @@ export const AdminView: React.FC = () => {
     }
   };
 
-  const handleViewProof = async (paymentId: string) => {
+  const handleViewProof = async (item: PaymentRecordItem) => {
+    if (item.proofUrl) {
+      setViewingProof(item.proofUrl);
+      return;
+    }
     try {
-      const data = await api.get(`/payments/${paymentId}/proof-url`);
+      const data = await api.get(`/payments/${item.id}/proof-url`);
       if (data.signedUrl) {
         setViewingProof(data.signedUrl);
       }
@@ -172,11 +196,11 @@ export const AdminView: React.FC = () => {
               Warden Admin Control Panel
             </h1>
             <span className="text-xs bg-[#fff2e6] text-[#c05400] border border-[#ffdbca] px-2.5 py-0.5 rounded-full font-bold uppercase">
-              Admin Mode
+              {user?.role === 'SUPER_ADMIN' ? 'Super Admin' : 'Admin'} Mode
             </span>
           </div>
           <p className="text-[#464554] text-xs mt-1">
-            Manage residents, verify payment proofs, set meal rates, and lock monthly billing cycles.
+            Manage residents, verify &amp; audit payment proofs, set meal rates, and lock monthly billing cycles.
           </p>
         </div>
 
@@ -243,57 +267,151 @@ export const AdminView: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Column: Pending Verification Queue & User Management */}
+        {/* Right Column: Payment Approvals & Audit History + User Management */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Pending Payment Approvals */}
+          {/* Payment Verification Queue & Audit History */}
           <div className="stitch-card p-6 bg-white space-y-4">
-            <h2 className="font-display font-bold text-base text-[#0b1c30]">
-              Pending Payment Verification Queue ({pendingPayments.length})
-            </h2>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+              <h2 className="font-display font-bold text-base text-[#0b1c30]">
+                Payment Verification &amp; Audit Log
+              </h2>
 
-            {pendingPayments.length === 0 ? (
-              <p className="text-xs text-[#767586] py-6 text-center">No pending payment submissions awaiting verification.</p>
-            ) : (
-              <div className="divide-y divide-slate-100">
-                {pendingPayments.map((item) => (
-                  <div key={item.id} className="py-3.5 flex items-center justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-[#0b1c30] truncate">
-                        {item.user?.fullName || 'Resident'} — {item.note || 'Payment Submission'}
-                      </p>
-                      <p className="text-xs text-[#767586]">{item.date} • {item.type} • ₹{item.amount}</p>
-                    </div>
-
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      {item.screenshotPath && (
-                        <button
-                          onClick={() => handleViewProof(item.id)}
-                          className="btn-secondary text-xs py-1 px-2.5"
-                          title="View Screenshot"
-                        >
-                          <Image className="w-3.5 h-3.5" /> Proof
-                        </button>
-                      )}
-                      <button
-                        onClick={() => handleVerifyPayment(item.id, 'APPROVED')}
-                        className="btn-primary text-xs py-1.5 px-3 bg-[#006c49] hover:bg-[#005438] shadow-[#006c49]/20"
-                      >
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Approve
-                      </button>
-                      <button
-                        onClick={() => handleVerifyPayment(item.id, 'REJECTED')}
-                        className="btn-danger text-xs py-1.5 px-3"
-                      >
-                        <XCircle className="w-3.5 h-3.5" /> Reject
-                      </button>
-                    </div>
-                  </div>
-                ))}
+              <div className="flex items-center p-1 bg-slate-100 rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => setPaymentTab('pending')}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                    paymentTab === 'pending'
+                      ? 'bg-white text-[#0b1c30] shadow-sm'
+                      : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  Pending Queue ({pendingPayments.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentTab('history')}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 ${
+                    paymentTab === 'history'
+                      ? 'bg-white text-[#0b1c30] shadow-sm'
+                      : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  <History className="w-3.5 h-3.5" /> Full Audit History ({paymentHistory.length})
+                </button>
               </div>
+            </div>
+
+            {paymentTab === 'pending' ? (
+              pendingPayments.length === 0 ? (
+                <p className="text-xs text-[#767586] py-6 text-center">No pending payment submissions awaiting verification.</p>
+              ) : (
+                <div className="divide-y divide-slate-100 max-h-[380px] overflow-y-auto pr-1">
+                  {pendingPayments.map((item) => (
+                    <div key={item.id} className="py-3.5 flex items-center justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-[#0b1c30] truncate">
+                          {item.user?.fullName || 'Resident'} — {item.note || 'Payment Submission'}
+                        </p>
+                        <p className="text-xs text-[#767586]">{item.date} • {item.type} • ₹{item.amount}</p>
+                      </div>
+
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {(item.proofUrl || item.screenshotPath) && (
+                          <button
+                            onClick={() => handleViewProof(item)}
+                            className="btn-secondary text-xs py-1 px-2.5 flex items-center gap-1.5"
+                            title="View Screenshot"
+                          >
+                            {item.proofUrl ? (
+                              <img src={item.proofUrl} alt="Thumbnail" className="w-5 h-5 object-cover rounded" />
+                            ) : (
+                              <Image className="w-3.5 h-3.5" />
+                            )}
+                            Proof
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleVerifyPayment(item.id, 'APPROVED')}
+                          className="btn-primary text-xs py-1.5 px-3 bg-[#006c49] hover:bg-[#005438] shadow-[#006c49]/20"
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Approve
+                        </button>
+                        <button
+                          onClick={() => handleVerifyPayment(item.id, 'REJECTED')}
+                          className="btn-danger text-xs py-1.5 px-3"
+                        >
+                          <XCircle className="w-3.5 h-3.5" /> Reject
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )
+            ) : (
+              /* Full Audit History List */
+              paymentHistory.length === 0 ? (
+                <p className="text-xs text-[#767586] py-6 text-center">No payment history records recorded yet.</p>
+              ) : (
+                <div className="divide-y divide-slate-100 max-h-[380px] overflow-y-auto pr-1">
+                  {paymentHistory.map((item) => (
+                    <div key={item.id} className="py-3 flex items-center justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-semibold text-[#0b1c30] truncate">
+                            {item.user?.fullName || 'Resident'}
+                          </p>
+                          <span
+                            className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                              item.status === 'APPROVED'
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                : item.status === 'REJECTED'
+                                ? 'bg-rose-50 text-rose-600 border border-rose-200'
+                                : 'bg-amber-50 text-amber-700 border border-amber-200'
+                            }`}
+                          >
+                            {item.status}
+                          </span>
+                        </div>
+                        <p className="text-xs text-[#767586]">
+                          {item.date} • {item.type} • ₹{item.amount} {item.note ? `• ${item.note}` : ''}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {(item.proofUrl || item.screenshotPath) && (
+                          <button
+                            onClick={() => handleViewProof(item)}
+                            className="btn-secondary text-xs py-1 px-2.5 flex items-center gap-1.5"
+                            title="View Proof"
+                          >
+                            {item.proofUrl ? (
+                              <img src={item.proofUrl} alt="Thumbnail" className="w-5 h-5 object-cover rounded" />
+                            ) : (
+                              <Image className="w-3.5 h-3.5" />
+                            )}
+                            Proof
+                          </button>
+                        )}
+
+                        {/* Re-verify action if status needs update */}
+                        {item.status === 'PENDING' && (
+                          <button
+                            onClick={() => handleVerifyPayment(item.id, 'APPROVED')}
+                            className="btn-primary text-xs py-1 px-2.5 bg-[#006c49] hover:bg-[#005438]"
+                          >
+                            Approve
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )
             )}
           </div>
 
-          {/* User Management List */}
+          {/* Resident User Management List */}
           <div className="stitch-card p-6 bg-white space-y-4">
             <div className="flex justify-between items-center pb-2 border-b border-slate-100">
               <h2 className="font-display font-bold text-base text-[#0b1c30] flex items-center gap-2">
@@ -317,24 +435,37 @@ export const AdminView: React.FC = () => {
             ) : (
               <div className="divide-y divide-slate-100">
                 {paginatedMembers.map((m) => (
-                  <div key={m.id} className="py-3 flex items-center justify-between">
+                  <div key={m.id} className="py-3 flex items-center justify-between gap-3">
                     <div>
                       <p className="text-sm font-semibold text-[#0b1c30]">{m.fullName}</p>
                       <p className="text-xs text-[#767586]">{m.email} • Role: <span className="font-semibold capitalize">{m.role.toLowerCase()}</span></p>
                     </div>
 
-                    {m.role !== 'SUPER_ADMIN' && (user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN') && m.id !== user?.id && (
-                      <button
-                        onClick={() => handleRoleChange(m.id, m.role)}
-                        className={`text-xs px-3 py-1.5 rounded-xl border font-semibold transition-all ${
-                          m.role === 'ADMIN'
-                            ? 'bg-rose-50 text-rose-600 border-rose-200 hover:bg-rose-100'
-                            : 'bg-[#eff4ff] text-[#4648d4] border-[#d3e4fe] hover:bg-[#e5eeff]'
-                        }`}
-                      >
-                        {m.role === 'ADMIN' ? 'Demote to Student' : 'Promote to Admin'}
-                      </button>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {m.role !== 'SUPER_ADMIN' && (user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN') && m.id !== user?.id && (
+                        <button
+                          onClick={() => handleRoleChange(m.id, m.role)}
+                          className={`text-xs px-3 py-1.5 rounded-xl border font-semibold transition-all ${
+                            m.role === 'ADMIN'
+                              ? 'bg-rose-50 text-rose-600 border-rose-200 hover:bg-rose-100'
+                              : 'bg-[#eff4ff] text-[#4648d4] border-[#d3e4fe] hover:bg-[#e5eeff]'
+                          }`}
+                        >
+                          {m.role === 'ADMIN' ? 'Demote to Student' : 'Promote to Admin'}
+                        </button>
+                      )}
+
+                      {/* Delete User Button for Super Admin & Admin */}
+                      {m.id !== user?.id && (user?.role === 'SUPER_ADMIN' || (user?.role === 'ADMIN' && m.role === 'STUDENT')) && (
+                        <button
+                          onClick={() => handleDeleteUser(m.id, m.fullName)}
+                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                          title={`Delete account for ${m.fullName}`}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>

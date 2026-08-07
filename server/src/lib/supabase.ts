@@ -4,8 +4,12 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const supabaseUrl = process.env.SUPABASE_URL || 'https://bixrljfqzvwtxqkyrpoo.supabase.co';
+const supabaseUrl = process.env.SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_ANON_KEY || '';
+
+if (!supabaseUrl || !supabaseKey) {
+  console.warn('[Supabase Config Warning]: SUPABASE_URL or SUPABASE_ANON_KEY is missing in server environment variables.');
+}
 
 // Admin client for server-side operations (uses service role key if available, falls back to anon key)
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || supabaseKey;

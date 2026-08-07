@@ -711,6 +711,50 @@ router.patch('/admin/members/:id/role', requireAuth, requireAdmin, validate(spen
         return res.status(500).json({ error: err.message });
     }
 });
+// DELETE /api/admin/members/:id — Remove resident user account while preserving payment audit history
+router.delete('/admin/members/:id', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const actorUser = req.dbUser;
+        const authUser = req.authUser;
+        const targetUserId = req.params.id;
+        if (targetUserId === authUser.id) {
+            return res.status(400).json({ error: 'You cannot delete your own account.' });
+        }
+        // Check target user
+        const { data: targetUser } = await supabase_js_1.supabaseAdmin.from('User').select('role, fullName').eq('id', targetUserId).single();
+        if (!targetUser) {
+            return res.status(404).json({ error: 'User not found.' });
+        }
+        if (targetUser.role === 'SUPER_ADMIN') {
+            return res.status(403).json({ error: 'Super Admin accounts cannot be deleted.' });
+        }
+        if (actorUser.role === 'ADMIN' && targetUser.role === 'ADMIN') {
+            return res.status(403).json({ error: 'Admins cannot delete other Admin accounts. Super Admin required.' });
+        }
+        // Remove from active WorkspaceMember (removes from active resident list)
+        await supabase_js_1.supabaseAdmin.from('WorkspaceMember').delete().eq('userId', targetUserId);
+        // Clean up meals, expenses, snapshots (preserving Payment records for audit history)
+        await Promise.all([
+            supabase_js_1.supabaseAdmin.from('Meal').delete().eq('userId', targetUserId),
+            supabase_js_1.supabaseAdmin.from('Expense').delete().eq('userId', targetUserId),
+            supabase_js_1.supabaseAdmin.from('MonthlySnapshot').delete().eq('userId', targetUserId),
+        ]);
+        // Update User record to indicate Deleted Resident status so payment audit log retains name
+        const updatedName = targetUser.fullName.includes('(Deleted)') ? targetUser.fullName : `${targetUser.fullName} (Deleted)`;
+        await supabase_js_1.supabaseAdmin.from('User').update({ fullName: updatedName }).eq('id', targetUserId);
+        // Revoke Supabase Auth credentials
+        try {
+            await supabase_js_1.supabaseAdmin.auth.admin.deleteUser(targetUserId);
+        }
+        catch (authErr) {
+            console.warn('[Delete Auth User Warning]:', authErr.message);
+        }
+        return res.json({ success: true, message: `User ${targetUser.fullName} deleted successfully. Payment audit history preserved.` });
+    }
+    catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
+});
 // GET /api/admin/pending-payments
 router.get('/admin/pending-payments', requireAuth, requireAdmin, async (req, res) => {
     try {
@@ -723,7 +767,56 @@ router.get('/admin/pending-payments', requireAuth, requireAdmin, async (req, res
             .order('createdAt', { ascending: false });
         if (error)
             return res.status(400).json({ error: error.message });
-        return res.json({ pendingPayments: pending || [] });
+        const paymentsWithProofs = await Promise.all((pending || []).map(async (item) => {
+            let proofUrl = null;
+            if (item.screenshotPath) {
+                try {
+                    const { data } = await supabase_js_1.supabaseAdmin.storage
+                        .from('payment-proofs')
+                        .createSignedUrl(item.screenshotPath, 3600);
+                    proofUrl = data?.signedUrl || null;
+                }
+                catch {
+                    proofUrl = null;
+                }
+            }
+            const userObj = item.user || { fullName: 'Deleted Resident', email: 'N/A' };
+            return { ...item, user: userObj, proofUrl };
+        }));
+        return res.json({ pendingPayments: paymentsWithProofs });
+    }
+    catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
+});
+// GET /api/admin/payment-history — Complete payment verification audit log
+router.get('/admin/payment-history', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const ws = await getOrCreateWorkspace();
+        const { data: history, error } = await supabase_js_1.supabaseAdmin
+            .from('Payment')
+            .select('*, user:User(fullName, email)')
+            .eq('workspaceId', ws.id)
+            .order('createdAt', { ascending: false });
+        if (error)
+            return res.status(400).json({ error: error.message });
+        const paymentsWithProofs = await Promise.all((history || []).map(async (item) => {
+            let proofUrl = null;
+            if (item.screenshotPath) {
+                try {
+                    const { data } = await supabase_js_1.supabaseAdmin.storage
+                        .from('payment-proofs')
+                        .createSignedUrl(item.screenshotPath, 3600);
+                    proofUrl = data?.signedUrl || null;
+                }
+                catch {
+                    proofUrl = null;
+                }
+            }
+            const userObj = item.user || { fullName: 'Deleted Resident', email: 'N/A' };
+            return { ...item, user: userObj, proofUrl };
+        }));
+        return res.json({ payments: paymentsWithProofs });
     }
     catch (err) {
         return res.status(500).json({ error: err.message });
@@ -768,19 +861,45 @@ router.get('/admin/prices', async (_req, res) => {
         return res.status(500).json({ error: err.message });
     }
 });
-// POST /api/admin/prices
+// POST /api/admin/prices — Update meal rates across active billing period while preserving locked history
 router.post('/admin/prices', requireAuth, requireAdmin, validate(spendly_shared_1.UpdateMealPricesSchema), async (req, res) => {
     try {
         const { halfPrice, fullPrice } = req.body;
         const ws = await getOrCreateWorkspace();
-        const { data, error } = await supabase_js_1.supabaseAdmin
+        const currentMonth = new Date().toISOString().slice(0, 7);
+        // 1. Insert new MealPrice entry
+        const { data: priceData, error } = await supabase_js_1.supabaseAdmin
             .from('MealPrice')
             .insert([{ workspaceId: ws.id, halfPrice, fullPrice }])
             .select()
             .single();
         if (error)
             return res.status(400).json({ error: error.message });
-        return res.json({ success: true, prices: data });
+        // 2. Query locked months to protect older historical snapshots
+        const { data: lockedSnapshots } = await supabase_js_1.supabaseAdmin
+            .from('MonthlySnapshot')
+            .select('month')
+            .eq('workspaceId', ws.id)
+            .eq('isLocked', true);
+        const lockedMonths = new Set((lockedSnapshots || []).map((s) => s.month));
+        // 3. Update current active/unlocked meals so the new price applies everywhere immediately
+        const { data: activeMeals } = await supabase_js_1.supabaseAdmin
+            .from('Meal')
+            .select('*')
+            .eq('workspaceId', ws.id)
+            .like('date', `${currentMonth}%`);
+        if (activeMeals && activeMeals.length > 0 && !lockedMonths.has(currentMonth)) {
+            for (const meal of activeMeals) {
+                const lunchCost = meal.lunch === 'FULL' ? fullPrice : meal.lunch === 'HALF' ? halfPrice : 0;
+                const dinnerCost = meal.dinner === 'FULL' ? fullPrice : meal.dinner === 'HALF' ? halfPrice : 0;
+                const totalCost = lunchCost + dinnerCost;
+                await supabase_js_1.supabaseAdmin
+                    .from('Meal')
+                    .update({ lunchCost, dinnerCost, totalCost, updatedAt: new Date().toISOString() })
+                    .eq('id', meal.id);
+            }
+        }
+        return res.json({ success: true, prices: priceData });
     }
     catch (err) {
         return res.status(500).json({ error: err.message });
@@ -898,6 +1017,61 @@ router.get('/history', requireAuth, async (req, res) => {
         if (error)
             return res.status(400).json({ error: error.message });
         return res.json({ history: snapshots || [] });
+    }
+    catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
+});
+// GET /api/history/snapshot-details?month=YYYY-MM
+router.get('/history/snapshot-details', requireAuth, async (req, res) => {
+    try {
+        const authUser = req.authUser;
+        const userId = authUser.id;
+        const month = req.query.month || new Date().toISOString().slice(0, 7);
+        const [snapshotRes, mealsRes, expensesRes, paymentsRes] = await Promise.all([
+            supabase_js_1.supabaseAdmin.from('MonthlySnapshot').select('*').eq('userId', userId).eq('month', month).maybeSingle(),
+            supabase_js_1.supabaseAdmin.from('Meal').select('*').eq('userId', userId).like('date', `${month}%`).order('date', { ascending: true }),
+            supabase_js_1.supabaseAdmin.from('Expense').select('*').eq('userId', userId).like('date', `${month}%`).order('date', { ascending: true }),
+            supabase_js_1.supabaseAdmin.from('Payment').select('*').eq('userId', userId).like('date', `${month}%`).order('date', { ascending: true }),
+        ]);
+        const snapshot = snapshotRes.data;
+        const meals = mealsRes.data || [];
+        const expenses = expensesRes.data || [];
+        const rawPayments = paymentsRes.data || [];
+        const payments = await Promise.all(rawPayments.map(async (p) => {
+            let proofUrl = null;
+            if (p.screenshotPath) {
+                try {
+                    const { data } = await supabase_js_1.supabaseAdmin.storage
+                        .from('payment-proofs')
+                        .createSignedUrl(p.screenshotPath, 3600);
+                    proofUrl = data?.signedUrl || null;
+                }
+                catch {
+                    proofUrl = null;
+                }
+            }
+            return { ...p, proofUrl };
+        }));
+        const mealTotal = meals.reduce((s, m) => s + (m.totalCost || 0), 0);
+        const expenseTotal = expenses.reduce((s, e) => s + (e.amount || 0), 0);
+        const paymentTotal = payments.filter((p) => p.status === 'APPROVED').reduce((s, p) => s + (p.amount || 0), 0);
+        const totalSpent = mealTotal + expenseTotal;
+        const balanceDue = Math.max(0, totalSpent - paymentTotal);
+        return res.json({
+            month,
+            snapshot,
+            meals,
+            expenses,
+            payments,
+            totals: {
+                mealTotal: snapshot ? snapshot.mealTotal : mealTotal,
+                expenseTotal: snapshot ? snapshot.expenseTotal : expenseTotal,
+                paymentTotal: snapshot ? snapshot.paymentTotal : paymentTotal,
+                totalSpent,
+                balanceDue: snapshot ? snapshot.balanceDue : balanceDue,
+            },
+        });
     }
     catch (err) {
         return res.status(500).json({ error: err.message });

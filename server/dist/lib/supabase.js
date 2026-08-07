@@ -8,8 +8,11 @@ const supabase_js_1 = require("@supabase/supabase-js");
 const ws_1 = __importDefault(require("ws"));
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
-const supabaseUrl = process.env.SUPABASE_URL || 'https://bixrljfqzvwtxqkyrpoo.supabase.co';
+const supabaseUrl = process.env.SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_ANON_KEY || '';
+if (!supabaseUrl || !supabaseKey) {
+    console.warn('[Supabase Config Warning]: SUPABASE_URL or SUPABASE_ANON_KEY is missing in server environment variables.');
+}
 // Admin client for server-side operations (uses service role key if available, falls back to anon key)
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || supabaseKey;
 exports.supabase = (0, supabase_js_1.createClient)(supabaseUrl, supabaseKey, {
