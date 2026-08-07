@@ -427,7 +427,8 @@ router.get('/meals/month', requireAuth, async (req: Request, res: Response) => {
       .from('Meal')
       .select('*')
       .eq('userId', userId)
-      .like('date', `${month}%`);
+      .gte('date', `${month}-01`)
+      .lte('date', `${month}-31`);
 
     return res.json({ meals: meals || [] });
   } catch (err: any) {
@@ -446,7 +447,8 @@ router.get('/meals/missing', requireAuth, async (req: Request, res: Response) =>
       .from('Meal')
       .select('date')
       .eq('userId', userId)
-      .like('date', `${month}%`);
+      .gte('date', `${month}-01`)
+      .lte('date', `${month}-31`);
 
     const recordedDates = new Set(
       (meals || []).map(m => String(m.date || '').slice(0, 10))
@@ -993,7 +995,8 @@ router.post('/admin/prices', requireAuth, requireAdmin, validate(UpdateMealPrice
       .from('Meal')
       .select('*')
       .eq('workspaceId', ws.id)
-      .like('date', `${currentMonth}%`);
+      .gte('date', `${currentMonth}-01`)
+      .lte('date', `${currentMonth}-31`);
 
     if (activeMeals && activeMeals.length > 0 && !lockedMonths.has(currentMonth)) {
       for (const meal of activeMeals) {
@@ -1032,8 +1035,8 @@ router.post('/admin/month-lock', requireAuth, requireAdmin, validate(MonthLockSc
         const uid = member.userId;
 
         const [mealsRes, expensesRes, paymentsRes] = await Promise.all([
-          supabaseAdmin.from('Meal').select('totalCost').eq('userId', uid).like('date', `${month}%`),
-          supabaseAdmin.from('Expense').select('amount').eq('userId', uid).like('date', `${month}%`),
+          supabaseAdmin.from('Meal').select('totalCost').eq('userId', uid).gte('date', `${month}-01`).lte('date', `${month}-31`),
+          supabaseAdmin.from('Expense').select('amount').eq('userId', uid).gte('date', `${month}-01`).lte('date', `${month}-31`),
           supabaseAdmin.from('Payment').select('amount').eq('userId', uid).eq('status', 'APPROVED'),
         ]);
 
@@ -1090,8 +1093,8 @@ router.get('/reports/monthly', requireAuth, async (req: Request, res: Response) 
     const month = (req.query.month as string) || new Date().toISOString().slice(0, 7);
 
     const [mealsRes, expensesRes, paymentsRes] = await Promise.all([
-      supabaseAdmin.from('Meal').select('*').eq('userId', userId).like('date', `${month}%`),
-      supabaseAdmin.from('Expense').select('*').eq('userId', userId).like('date', `${month}%`),
+      supabaseAdmin.from('Meal').select('*').eq('userId', userId).gte('date', `${month}-01`).lte('date', `${month}-31`),
+      supabaseAdmin.from('Expense').select('*').eq('userId', userId).gte('date', `${month}-01`).lte('date', `${month}-31`),
       supabaseAdmin.from('Payment').select('amount').eq('userId', userId).eq('status', 'APPROVED'),
     ]);
 
@@ -1151,9 +1154,9 @@ router.get('/history/snapshot-details', requireAuth, async (req: Request, res: R
 
     const [snapshotRes, mealsRes, expensesRes, paymentsRes] = await Promise.all([
       supabaseAdmin.from('MonthlySnapshot').select('*').eq('userId', userId).eq('month', month).maybeSingle(),
-      supabaseAdmin.from('Meal').select('*').eq('userId', userId).like('date', `${month}%`).order('date', { ascending: true }),
-      supabaseAdmin.from('Expense').select('*').eq('userId', userId).like('date', `${month}%`).order('date', { ascending: true }),
-      supabaseAdmin.from('Payment').select('*').eq('userId', userId).like('date', `${month}%`).order('date', { ascending: true }),
+      supabaseAdmin.from('Meal').select('*').eq('userId', userId).gte('date', `${month}-01`).lte('date', `${month}-31`).order('date', { ascending: true }),
+      supabaseAdmin.from('Expense').select('*').eq('userId', userId).gte('date', `${month}-01`).lte('date', `${month}-31`).order('date', { ascending: true }),
+      supabaseAdmin.from('Payment').select('*').eq('userId', userId).gte('date', `${month}-01`).lte('date', `${month}-31`).order('date', { ascending: true }),
     ]);
 
     const snapshot = snapshotRes.data;
