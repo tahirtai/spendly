@@ -52,8 +52,8 @@ SUPABASE_ANON_KEY=your_supabase_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 DATABASE_URL=postgresql://postgres:password@db.your-project.supabase.co:5432/postgres
 
-ADMIN_EMAIL=admin@spendly.io
-ADMIN_PASSWORD=SuperAdminPassword123!
+ADMIN_EMAIL=admin@.io
+ADMIN_PASSWORD=SuperAdminPassword123
 ```
 
 #### Client Environment (`client/.env`)

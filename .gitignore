@@ -53,5 +53,9 @@ temp/
 coverage/
 .nyc_output/
 
-# Local Configuration with Secrets
+# Local Configuration, Designs & Tooling
+design/
+stitch_designs/
+scripts/
 mcp.json
+mcp.example.json
