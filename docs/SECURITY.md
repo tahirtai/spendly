@@ -1,6 +1,6 @@
 # 🛡️ Spendly — Security & Threat Model Architecture
 
-This document details the security posture, authentication framework, authorization enforcement, storage access controls, and environment credential protection for **Spendly**.
+This document details the security posture, authentication framework, authorization enforcement, storage access controls, environment credential protection, and known technical debt for **Spendly**.
 
 ---
 
@@ -8,12 +8,12 @@ This document details the security posture, authentication framework, authorizat
 
 ### Principles
 - **No Hardcoded Secrets**: Raw API keys, JWT secrets, database connection passwords, or service-role keys must NEVER be committed to version control.
-- **Environment Placeholders**: Documentation and setup guides use standardized placeholder strings (`YOUR_SUPABASE_URL`, `YOUR_SUPABASE_SERVICE_ROLE_KEY`, etc.).
+- **Environment Placeholders**: Documentation and setup guides use standardized placeholder strings.
 - **Strict `.gitignore` Enforcement**: Monorepo root `.gitignore` enforces exclusion of `.env`, `.env.local`, `.env.*`, and temporary log files.
 
 ### Key Separation Architecture
 - **Client Workspace (`client/.env`)**:
-  - `VITE_API_URL`: Backend API endpoint string (`http://localhost:5000` or production URL).
+  - `VITE_API_URL`: Backend API endpoint string (`https://spendly-api-n0jr.onrender.com` in production or `http://localhost:5000` in dev).
   - *No Supabase Service-Role key is EVER placed in client-side code.*
 - **Server Workspace (`server/.env`)**:
   - `SUPABASE_SERVICE_ROLE_KEY`: Privileged key allowing backend administrative database and auth management. Isolated strictly on the Node.js server.
@@ -71,16 +71,24 @@ UPI payment screenshot uploads undergo multi-layered validation:
 ## 🌐 5. Network Hardening & Server Protections
 
 - **Disabled `x-powered-by` Header**: Prevents technology disclosure (`app.disable('x-powered-by')`).
-- **CORS Configuration**: Restricts origin requests to `http://localhost:5173` in dev mode and the specified `CLIENT_URL` domain in production.
+- **CORS Configuration**: Restricts origin requests to production client domain (`https://spendly-client-phi.vercel.app`) or localhost during development.
 - **Input Sanitization & Type Safety**: API request bodies are parsed using Zod schemas (`safeParse`), rejecting malformed payloads before hitting controllers.
 - **Global Error Handling**: Express error handler suppresses database tracebacks in production, returning sanitized JSON error messages.
 
 ---
 
-## 📋 6. Production Security Checklist
+## ⚠️ 6. Known Security Technical Debt
 
-- [ ] Verify `SUPABASE_SERVICE_ROLE_KEY` is set ONLY in server environment variables.
-- [ ] Confirm `NODE_ENV=production` is active on deployment server.
-- [ ] Ensure `CLIENT_URL` is set to the exact production frontend domain.
-- [ ] Verify database connection strings use SSL connection flags (`?sslmode=require`).
-- [ ] Change initial seed admin password immediately after deployment.
+1. **Client Token Storage**: Authentication JWT tokens are currently stored in `localStorage` (`spendly_auth_token`) for SPA session persistence. Storing tokens in HTTP-only, SameSite cookies is a recommended future hardening measure against potential XSS vectors.
+2. **Single Workspace Pre-Seeding**: Currently, workspace resolution defaults to pre-seeded `SPENDLY_HOSTEL`. Strict multi-tenant isolation header enforcement will be required when multi-workspace UI is enabled.
+3. **CORS Development Fallback**: Permissive fallback exists in non-production development mode to facilitate local developer testing.
+
+---
+
+## 📋 7. Production Security Checklist
+
+- [x] Verify `SUPABASE_SERVICE_ROLE_KEY` is set ONLY in server environment variables.
+- [x] Confirm `NODE_ENV=production` is active on deployment server.
+- [x] Ensure `CLIENT_URL` is set to `https://spendly-client-phi.vercel.app`.
+- [x] Verify database connection strings use SSL flags (`?sslmode=require`).
+- [ ] Change initial seed admin password immediately after first login in production.

@@ -2,7 +2,17 @@
 
 **Version:** 1.0 (Final Production Audit)  
 **Target Architecture:** TypeScript Monorepo (`shared`, `server`, `client`)  
-**Status:** Production-Ready & Verified  
+**Status:** Production-Ready & Live in Production  
+
+---
+
+## 🌐 Production System Topology
+
+- **Frontend SPA**: Vercel → [https://spendly-client-phi.vercel.app](https://spendly-client-phi.vercel.app)
+- **Backend API**: Render → [https://spendly-api-n0jr.onrender.com](https://spendly-api-n0jr.onrender.com)
+- **API Health Check**: Render → [https://spendly-api-n0jr.onrender.com/health](https://spendly-api-n0jr.onrender.com/health)
+- **Database & Storage**: Supabase Cloud PostgreSQL + Supabase Storage
+- **GitHub Repository**: [https://github.com/tahirtai/spendly](https://github.com/tahirtai/spendly)
 
 ---
 
@@ -42,17 +52,19 @@ Spendly is architected as a clean, decoupled TypeScript monorepo using standard 
 - **Styling**: Tailwind CSS v3.4, PostCSS, Autoprefixer, Lucide React icons
 - **Animations**: `framer-motion` v11.2
 - **Data Visualization**: `chart.js` v4.4 & `react-chartjs-2` v5.2
+- **Hosting**: Vercel SPA
 
 ### Backend (`server/`)
-- **Runtime**: Node.js v20+ with Express v4.19
+- **Runtime**: Node.js v20 LTS (`v20.20.0`) with Express v4.19
 - **Execution & Watch**: `tsx` v4.23 for dev server; `tsc` compiler for production
 - **Validation**: Zod schema validation middleware (`validate()`)
 - **Database Access**: Prisma ORM (`@prisma/client` v5.14) & `@supabase/supabase-js` v2.43
 - **File Uploads**: `multer` v2.2 (in-memory buffer handling)
 - **Security**: CORS origin restrictions, `x-powered-by` header disabled
+- **Hosting**: Render Web Service
 
 ### Shared Layer (`shared/`)
-- **Validation Library**: `zod` v3.23
+- **Validation Library**: `zod` v3.25.76
 - **Types**: Contract interfaces for User, Meal, Expense, Payment, Snapshot, and Report objects.
 
 ---
@@ -243,13 +255,12 @@ model AuditLog {
 
 All API endpoints are defined in `server/src/routes/api.routes.ts`:
 
+### System Routes
+- `GET /health` (Public) -> Returns `{ status: 'ok', service: 'Spendly API', timestamp: string }`
+
 ### Auth Routes
-- `POST /api/auth/register`
-  - Body: `RegisterInput` (`fullName`, `email`, `password`, `phone?`)
-  - Response: `{ success: true, message: string }`
-- `POST /api/auth/login`
-  - Body: `LoginInput` (`email`, `password`)
-  - Response: `{ user: UserProfile, token: string }`
+- `POST /api/auth/register` -> Body: `RegisterInput` (`fullName`, `email`, `password`, `phone?`)
+- `POST /api/auth/login` -> Body: `LoginInput` (`email`, `password`)
 
 ### User & Workspace Routes
 - `GET /api/workspaces/mine` (Auth required) -> Returns user workspace object

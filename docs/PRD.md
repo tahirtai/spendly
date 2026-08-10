@@ -3,7 +3,16 @@
 **Version:** 1.0 (Final Production Audit)  
 **Product Name:** Spendly  
 **Type:** Monorepo SaaS-ready Hostel & PG Expense Management Platform  
-**Status:** Production-Ready & Operational  
+**Status:** Production-Ready & Live in Production  
+
+---
+
+## 🌐 Production URLs
+
+- **Production App**: [https://spendly-client-phi.vercel.app](https://spendly-client-phi.vercel.app)
+- **Production API**: [https://spendly-api-n0jr.onrender.com](https://spendly-api-n0jr.onrender.com)
+- **API Health Check**: [https://spendly-api-n0jr.onrender.com/health](https://spendly-api-n0jr.onrender.com/health)
+- **Source Repository**: [https://github.com/tahirtai/spendly](https://github.com/tahirtai/spendly)
 
 ---
 
@@ -53,7 +62,7 @@ Spendly solves these issues by establishing a centralized digital workspace with
 - [x] **Missing Entry Alerts & Calendar**: Highlight unrecorded meal days in unlocked months via calendar views.
 - [x] **Categorized Expense Tracker**: Log expenditures under pre-seeded categories (`Food`, `Tea`, `Snacks`, `Grocery`, `Laundry`, `Travel`, `Medical`, `Shopping`, `Other`).
 - [x] **Payment Verification Portal**: Cash & UPI payment submission with direct Supabase Storage screenshot upload (`payment-proofs` bucket).
-- [x] **Signed Payment Proof URLs**: Secure temporary access to uploaded screenshots for admin verification.
+- [x] **Signed Payment Proof URLs**: Secure temporary 1-hour access to uploaded screenshots for admin verification.
 - [x] **Admin Verification Workflow**: Approve or reject pending user payments; approved payments instantly reduce balance due.
 - [x] **Meal Price Management**: Admin configurable `halfPrice` and `fullPrice` with retroactive stability.
 - [x] **Month Locking & Snapshots**: Lock closed months to generate immutable `MonthlySnapshot` records.
@@ -66,7 +75,7 @@ Spendly solves these issues by establishing a centralized digital workspace with
 
 - [ ] **Multi-Workspace Management UI**: Interface for creating and switching between multiple independent hostels or PG branches.
 - [ ] **Online Payment Gateway Integration**: Automated instant payments via Razorpay / Paytm / Stripe integration.
-- [ ] **WhatsApp & Push Notifications**: Automated automated reminders for unlogged meals and month-end pending dues.
+- [ ] **WhatsApp & Push Notifications**: Automated reminders for unlogged meals and month-end pending dues.
 - [ ] **Automated PDF Statement Export**: Native server-side PDF generation for monthly financial statements.
 - [ ] **Room Rent & Utility Bill Splitting Module**: Module for handling fixed rent, electricity, and water bill distribution.
 

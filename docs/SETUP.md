@@ -8,10 +8,10 @@ This step-by-step guide explains how to clone, configure, build, and run the **S
 
 Before setting up Spendly, verify that your machine has the following tools installed:
 
-- **Node.js**: `v18.x` or `v20.x` (LTS recommended)
-- **npm**: `v9.x` or `v10.x`
+- **Node.js**: Node 20 LTS (`v20.20.0` recommended)
+- **npm**: `v10.x` or `v11.x`
 - **Git**: Latest stable release
-- **Supabase Account**: Free Supabase project at [supabase.com](https://supabase.com)
+- **Supabase Account**: Managed Supabase project at [supabase.com](https://supabase.com)
 
 ---
 
@@ -19,14 +19,14 @@ Before setting up Spendly, verify that your machine has the following tools inst
 
 ### Step 1: Clone the Repository
 ```bash
-git clone https://github.com/your-username/spendly.git
+git clone https://github.com/tahirtai/spendly.git
 cd spendly
 ```
 
 ### Step 2: Install Workspace Dependencies
-Spendly uses `npm workspaces` to link `shared`, `server`, and `client`. Install all dependencies from the root:
+Spendly uses `npm workspaces` to link `shared`, `server`, and `client`. Install dependencies reproducibly from the root:
 ```bash
-npm install
+npm ci
 ```
 
 ### Step 3: Configure Environment Variables
