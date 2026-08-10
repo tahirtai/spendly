@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" fill="none">
+  <defs>
+    <linearGradient id="spendlyLogoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1" />
+      <stop offset="50%" stop-color="#4f46e5" />
+      <stop offset="100%" stop-color="#4338ca" />
+    </linearGradient>
+    <linearGradient id="logoSparkleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#e0e7ff" />
+    </linearGradient>
+    <filter id="logoShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#4338ca" flood-opacity="0.3" />
+    </filter>
+  </defs>
+
+  <!-- Icon Emblem Badge -->
+  <g transform="translate(4, 4)">
+    <rect x="0" y="0" width="72" height="72" rx="20" fill="url(#spendlyLogoGrad)" filter="url(#logoShadow)" />
+    <rect x="1" y="1" width="70" height="70" rx="19" fill="none" stroke="#ffffff" stroke-opacity="0.25" stroke-width="1.5" />
+    <path d="M36 14 C36 26.2 26.2 36 14 36 C26.2 36 36 45.8 36 58 C36 45.8 45.8 36 58 36 C45.8 36 36 26.2 36 14 Z" fill="url(#logoSparkleGrad)" />
+    <path d="M50 17 C50 21.1 46.6 24.5 42.5 24.5 C46.6 24.5 50 27.9 50 32 C50 27.9 53.4 24.5 57.5 24.5 C53.4 24.5 50 21.1 50 17 Z" fill="#ffffff" opacity="0.85" />
+  </g>
+
+  <!-- Brand Typography "Spendly" -->
+  <text x="94" y="53" font-family="Inter, system-ui, -apple-system, sans-serif" font-size="44" font-weight="800" letter-spacing="-1" fill="#0b1c30">Spendly</text>
+  
+  <!-- Accent dot on 'y' -->
+  <circle cx="288" cy="22" r="4.5" fill="#4f46e5" />
+</svg>

@@ -35,8 +35,8 @@ export default {
         }
       },
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
-        display: ['Geist', 'sans-serif'],
+        sans: ['Manrope', 'Inter', 'sans-serif'],
+        display: ['Manrope', 'Inter', 'sans-serif'],
       },
       boxShadow: {
         'soft': '0 4px 20px -2px rgba(11, 28, 48, 0.05)',

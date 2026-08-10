@@ -186,7 +186,7 @@ export const AdminView: React.FC = () => {
   const paginatedMembers = filteredMembers.slice((memberPage - 1) * itemsPerPage, memberPage * itemsPerPage);
 
   return (
-    <div className="space-y-8 p-6 max-w-7xl mx-auto">
+    <div className="mobile-page">
       {/* Light Admin Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-200 pb-6">
         <div>

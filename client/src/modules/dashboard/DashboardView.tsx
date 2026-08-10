@@ -50,8 +50,8 @@ export const DashboardView: React.FC = () => {
     setIsLoading(true);
     try {
       const [sumData, mealData] = await Promise.all([
-        api.get('/dashboard/summary'),
-        api.get('/meals/today'),
+        api.get(`/dashboard/summary?month=${today.slice(0, 7)}`),
+        api.get(`/meals/today?date=${today}`),
       ]);
       setMetrics(sumData);
       setTodayMeal(mealData);
@@ -64,24 +64,29 @@ export const DashboardView: React.FC = () => {
 
   useEffect(() => {
     loadDashboard();
-  }, [user?.id]);
+  }, [user?.id, today]);
 
   const handleMealChange = async (type: 'lunch' | 'dinner', option: string) => {
-    const updated = { ...todayMeal, [type]: option };
+    const cleanDate = String(todayMeal.date || today).slice(0, 10);
+    const updated = { ...todayMeal, date: cleanDate, [type]: option };
     setTodayMeal(updated);
     setIsSavingMeal(true);
 
     try {
       const data = await api.post('/meals', {
-        date: updated.date,
+        date: cleanDate,
         lunch: updated.lunch,
         dinner: updated.dinner,
       });
       if (data.meal) setTodayMeal(data.meal);
 
-      // Refresh metrics
-      const sumData = await api.get('/dashboard/summary');
+      // Refresh metrics and today's meal
+      const [sumData, freshMeal] = await Promise.all([
+        api.get(`/dashboard/summary?month=${cleanDate.slice(0, 7)}`),
+        api.get(`/meals/today?date=${cleanDate}`),
+      ]);
       setMetrics(sumData);
+      if (freshMeal) setTodayMeal(freshMeal);
     } catch (err) {
       console.error('Failed to save meal selection:', err);
     } finally {
@@ -90,7 +95,7 @@ export const DashboardView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8 p-6 max-w-7xl mx-auto">
+    <div className="mobile-page">
       {/* Light Banner Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 stitch-card p-6 rounded-2xl bg-white border-[#e2e8f0]">
         <div>

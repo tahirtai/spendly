@@ -1,81 +1,92 @@
-# 🎨 Stitch Design Specification & Blueprint — Spendly
+# 🎨 Spendly — UI/UX Design Specification & Master System
 
-This document serves as the **authoritative master specification** for the Spendly Hostel Expense Manager application. All screens designed in Stitch have been saved directly to the project's repository.
-
-> **Instruction for AI / Developers**: When creating or coding the Spendly application pages, refer to the corresponding exact HTML template in `design/stitch_designs/`. Replicate the exact Tailwind CSS styling, color palettes, responsive flex/grid layouts, micro-animations, icons, and chart configurations.
+This document outlines the UI design system, color tokens, glassmorphism specs, mobile-first component hierarchy, and Stitch HTML references for **Spendly**.
 
 ---
 
-## 📐 Design Tokens & Architecture
+## 💎 Design System Architecture: Lumina Glassmorphism
 
-- **CSS Framework**: Tailwind CSS (`https://cdn.tailwindcss.com?plugins=forms,container-queries`)
-- **Primary Fonts**: `Geist` (Headlines & Labels), `Inter` (Body Text)
-- **Primary Color Palette**: Indigo (`#6366f1`), Emerald (`#10b981`), Orange (`#f97316`), Slate (`#64748b`)
-- **Charts & Data Viz**: Chart.js (`https://cdn.jsdelivr.net/npm/chart.js`)
-- **Canvas Resolution**: Desktop `2560 x 2048`
+Spendly uses a mobile-first **Lumina Glassmorphism** design system engineered using Vanilla CSS variables and Tailwind CSS 3.4.
 
----
-
-## 🖼️ Included Screen Specifications
-
-Below is the complete list of all **12 Stitch screens** downloaded directly from your Stitch project:
-
-### 1. Register Page (`01_Register_Spendly.html`)
-* **File Path**: [stitch_designs/01_Register_Spendly.html](file:///c:/Users/Taheer/Desktop/Spendly/stitch_designs/01_Register_Spendly.html)
-* **Description**: User onboarding and registration flow with form validation styling and split-screen branding.
-
-### 2. Daily Expenses (`02_Daily_Expenses_Spendly.html`)
-* **File Path**: [stitch_designs/02_Daily_Expenses_Spendly.html](file:///c:/Users/Taheer/Desktop/Spendly/stitch_designs/02_Daily_Expenses_Spendly.html)
-* **Description**: Daily expense logging screen with category pickers, amount inputs, date filters, and quick action cards.
-
-### 3. Settings (`03_Settings_Spendly.html`)
-* **File Path**: [stitch_designs/03_Settings_Spendly.html](file:///c:/Users/Taheer/Desktop/Spendly/stitch_designs/03_Settings_Spendly.html)
-* **Description**: App configuration screen including profile settings, notification preferences, hostel room settings, and budget limits.
-
-### 4. Payments (`04_Payments_Spendly.html`)
-* **File Path**: [stitch_designs/04_Payments_Spendly.html](file:///c:/Users/Taheer/Desktop/Spendly/stitch_designs/04_Payments_Spendly.html)
-* **Description**: Payment management hub for rent, mess fees, tiffin dues, and peer-to-peer split expense settlements.
-
-### 5. Monthly History (`05_Monthly_History_Spendly.html`)
-* **File Path**: [stitch_designs/05_Monthly_History_Spendly.html](file:///c:/Users/Taheer/Desktop/Spendly/stitch_designs/05_Monthly_History_Spendly.html)
-* **Description**: Historical overview of past months' expenses, download receipt options, and spending breakdown tables.
-
-### 6. Main Dashboard (`06_Dashboard_Spendly.html`)
-* **File Path**: [stitch_designs/06_Dashboard_Spendly.html](file:///c:/Users/Taheer/Desktop/Spendly/stitch_designs/06_Dashboard_Spendly.html)
-* **Description**: Central student hub featuring active balance, monthly spend summary, recent activity feed, quick add expense button, and expense distribution charts.
-
-### 7. Landing Page (`07_Spendly_Premium_Expense_Management.html`)
-* **File Path**: [stitch_designs/07_Spendly_Premium_Expense_Management.html](file:///c:/Users/Taheer/Desktop/Spendly/stitch_designs/07_Spendly_Premium_Expense_Management.html)
-* **Description**: Premium marketing landing page showcasing features, testimonials, pricing plans, and call-to-action sections.
-
-### 8. Tiffin & Mess Tracking (`08_Tiffin_Tracking_Spendly.html`)
-* **File Path**: [stitch_designs/08_Tiffin_Tracking_Spendly.html](file:///c:/Users/Taheer/Desktop/Spendly/stitch_designs/08_Tiffin_Tracking_Spendly.html)
-* **Description**: Specialized meal & tiffin counter tracker to mark attended meals (Breakfast, Lunch, Dinner), calculate monthly mess bill, and record meal skips.
-
-### 9. Reports & Analytics (`09_Reports_Analytics_Spendly.html`)
-* **File Path**: [stitch_designs/09_Reports_Analytics_Spendly.html](file:///c:/Users/Taheer/Desktop/Spendly/stitch_designs/09_Reports_Analytics_Spendly.html)
-* **Description**: Visual analytics dashboard featuring interactive line graphs, donut charts, category-wise breakdowns, and export to PDF/CSV options.
-
-### 10. User Profile (`10_User_Profile_Spendly.html`)
-* **File Path**: [stitch_designs/10_User_Profile_Spendly.html](file:///c:/Users/Taheer/Desktop/Spendly/stitch_designs/10_User_Profile_Spendly.html)
-* **Description**: Detailed user account details, room number, hostel name, emergency contact, and account security management.
-
-### 11. Admin Dashboard (`11_Admin_Dashboard_Spendly.html`)
-* **File Path**: [stitch_designs/11_Admin_Dashboard_Spendly.html](file:///c:/Users/Taheer/Desktop/Spendly/stitch_designs/11_Admin_Dashboard_Spendly.html)
-* **Description**: Hostel warden / administrator dashboard to manage residents, collect pending dues, broadcast announcements, and audit overall mess expenses.
-
-### 12. Login Page (`12_Login_Spendly.html`)
-* **File Path**: [stitch_designs/12_Login_Spendly.html](file:///c:/Users/Taheer/Desktop/Spendly/stitch_designs/12_Login_Spendly.html)
-* **Description**: Clean authentication screen with email/password input, Google single sign-on (SSO), and "Remember Me" options.
+### Core Visual Aesthetics
+1. **Glassmorphism Backdrop Blur**: Semi-transparent card layers (`backdrop-blur-xl bg-white/70`, `dark:bg-slate-900/80`) featuring subtle borders (`border border-white/20 dark:border-slate-800/50`).
+2. **Dynamic Gradients**: Vibrant primary accents (`from-indigo-600 to-violet-600`, `from-emerald-500 to-teal-600`, `from-amber-500 to-orange-500`).
+3. **Typography**: Google Font **Inter** for clean readability and **Outfit/Geist** for crisp headlines and badge indicators.
+4. **Micro-Animations**: Framer Motion subtle hover effects, active scale state feedback (`active:scale-95`), and smooth tab transitions.
 
 ---
 
-## ⚡ How to Preview Any Screen
+## 🎨 Color Palette & Tokens
 
-You can open any of the downloaded HTML files directly in your web browser or live server:
-```bash
-# Example: Open Dashboard in browser
-stitch_designs/06_Dashboard_Spendly.html
+| Token | Hex / Class | Application |
+| :--- | :--- | :--- |
+| **Primary Indigo** | `#6366f1` / `bg-indigo-600` | Branding, primary CTAs, active bottom nav items |
+| **Success Emerald**| `#10b981` / `bg-emerald-500` | Approved payments, full meal badges, positive balances |
+| **Warning Amber**  | `#f59e0b` / `bg-amber-500` | Pending verifications, half meal badges, missing entry alerts |
+| **Rose Red**       | `#ef4444` / `bg-rose-500` | Rejected payments, skip meal badges, delete actions |
+| **Slate Background**| `#f8fafc` / `bg-slate-50` | App container background |
+| **Glass Card**     | `bg-white/80 border-white/40` | Mobile card containers and modal overlays |
+
+---
+
+## 📱 Mobile-First Layout Architecture
+
+```
++-------------------------------------------------------+
+|                    DESKTOP CONTAINER                  |
+|  +-------------------------------------------------+  |
+|  |                 MOBILE APP FRAME                |  |
+|  |  +-------------------------------------------+  |  |
+|  |  | TOP HEADER                                |  |  |
+|  |  | Spendly Logo | Title | User Avatar Menu   |  |  |
+|  |  +-------------------------------------------+  |  |
+|  |  | SCROLLABLE MAIN VIEW CONTENT              |  |  |
+|  |  | (Dashboard / Tiffin / Expenses / Payments) |  |  |
+|  |  |                                           |  |  |
+|  |  +-------------------------------------------+  |  |
+|  |  | BOTTOM NAVIGATION BAR (AppShell)          |  |  |
+|  |  | Home | Tiffin | Expenses | Payments | Admin|  |  |
+|  |  +-------------------------------------------+  |  |
+|  +-------------------------------------------------+  |
++-------------------------------------------------------+
 ```
 
-All 12 design templates are self-contained HTML files with full inline and embedded styling ready to be rendered or converted to React/Vue/Svelte/Vanilla HTML components.
+### Component Structure (`client/src/components/`)
+- `AppShell.tsx`: Mobile app wrapper containing top header, avatar dropdown, and fixed bottom navigation bar.
+- `SpendlyLogo.tsx`: SVG vector logo with glowing gradient icon.
+- `SplashScreen.tsx`: Initial animated splash screen displayed on app boot.
+- `UserAvatar.tsx`: Avatar fallback showing initials or custom uploaded avatar image.
+- `auth-switch.tsx`: Glassmorphic auth card supporting fluid toggle between Login and Registration forms.
+
+---
+
+## 📄 Implemented Page Modules & Design Mappings
+
+| Module | React Component Path | Key Visual Features |
+| :--- | :--- | :--- |
+| **Landing** | `client/src/modules/landing/LandingView.tsx` | Hero section, feature grids, statistics, glassmorphic CTA buttons |
+| **Auth** | `client/src/modules/auth/LoginView.tsx` | Glassmorphic card toggle (`auth-switch.tsx`) with instant form validation |
+| **Dashboard** | `client/src/modules/dashboard/DashboardView.tsx` | Balance summary cards, meal log quick buttons, missing entry banner |
+| **Tiffin Tracker**| `client/src/modules/tiffin/TiffinView.tsx` | Lunch/Dinner half/full/skip pickers, monthly calendar missing days grid |
+| **Expenses** | `client/src/modules/expenses/ExpensesView.tsx` | Category pill selectors, expense list with date tags, custom note inputs |
+| **Payments** | `client/src/modules/payments/PaymentsView.tsx` | Payment method toggle (Cash vs UPI), drag-and-drop screenshot uploader |
+| **History** | `client/src/modules/history/HistoryView.tsx` | Locked month badges, snapshot balance breakdown, historical detail modal |
+| **Reports** | `client/src/modules/reports/ReportsView.tsx` | Chart.js donut and bar charts, category breakdown percentage bars |
+| **Admin** | `client/src/modules/admin/AdminView.tsx` | Admin tabs for Member Balances, Payment Verifications, Price Config, Month Locking |
+| **Profile** | `client/src/modules/profile/ProfileView.tsx` | User profile card, phone/avatar editor, role badge indicator |
+
+---
+
+## 🖼️ Historical Stitch HTML Design Reference Files
+
+The HTML design exports downloaded from Stitch remain available in the repository as visual references:
+- Landing Page: `mobile view design/landing_page_mobile/code.html`
+- Login Interaction: `mobile view design/login_page_animated_interaction/code.html`
+- Dashboard: `mobile view design/user_dashboard_mobile/code.html`
+- Tiffin Tracker: `mobile view design/tiffin_tracker_mobile/code.html`
+- Expense Logger: `mobile view design/daily_expense_logger_mobile/code.html`
+- Payment Submission: `mobile view design/payment_page_mobile/code.html`
+- Monthly History: `mobile view design/monthly_history_mobile/code.html`
+- Reports Analytics: `mobile view design/reports_analytics_mobile/code.html`
+- Admin Panel: `mobile view design/admin_panel_mobile/code.html`
+- Super Admin: `mobile view design/super_admin_panel_mobile/code.html`

@@ -148,16 +148,16 @@ export declare const MonthLockSchema: z.ZodObject<{
 export type MonthLockInput = z.infer<typeof MonthLockSchema>;
 export declare const UpdateProfileSchema: z.ZodObject<{
     fullName: z.ZodOptional<z.ZodString>;
-    phone: z.ZodOptional<z.ZodString>;
-    avatarUrl: z.ZodOptional<z.ZodString>;
+    phone: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    avatarUrl: z.ZodOptional<z.ZodNullable<z.ZodString>>;
 }, "strip", z.ZodTypeAny, {
     fullName?: string | undefined;
-    phone?: string | undefined;
-    avatarUrl?: string | undefined;
+    phone?: string | null | undefined;
+    avatarUrl?: string | null | undefined;
 }, {
     fullName?: string | undefined;
-    phone?: string | undefined;
-    avatarUrl?: string | undefined;
+    phone?: string | null | undefined;
+    avatarUrl?: string | null | undefined;
 }>;
 export type UpdateProfileInput = z.infer<typeof UpdateProfileSchema>;
 export interface UserProfile {

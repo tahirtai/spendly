@@ -84,6 +84,22 @@ async function getUserWorkspace(userId) {
         .maybeSingle();
     return data?.workspace || null;
 }
+// ─── Helper: Get Safe Month Date Bounds (Prevents PostgreSQL Invalid Date Errors) ───
+function getMonthBounds(monthStr) {
+    const m = monthStr && /^\d{4}-\d{2}$/.test(monthStr)
+        ? monthStr
+        : new Date().toISOString().slice(0, 7);
+    const [year, monthNum] = m.split('-').map(Number);
+    const lastDay = new Date(year, monthNum, 0).getDate();
+    return {
+        month: m,
+        startDate: `${m}-01`,
+        endDate: `${m}-${String(lastDay).padStart(2, '0')}`,
+        lastDay,
+        year,
+        monthNum,
+    };
+}
 // ─── AUTH ENDPOINTS ───────────────────────────────────────────────────────────
 // POST /api/auth/register
 router.post('/auth/register', validate(spendly_shared_1.RegisterSchema), async (req, res) => {
@@ -258,16 +274,16 @@ router.get('/dashboard/summary', requireAuth, async (req, res) => {
     try {
         const authUser = req.authUser;
         const userId = authUser.id;
-        const currentMonth = new Date().toISOString().slice(0, 7);
+        const bounds = getMonthBounds(req.query.month);
         const [mealsRes, expensesRes, paymentsRes] = await Promise.all([
             supabase_js_1.supabaseAdmin.from('Meal').select('totalCost, date').eq('userId', userId),
             supabase_js_1.supabaseAdmin.from('Expense').select('amount, date').eq('userId', userId),
             supabase_js_1.supabaseAdmin.from('Payment').select('amount, status').eq('userId', userId).eq('status', 'APPROVED'),
         ]);
-        const monthMeals = (mealsRes.data || []).filter(m => String(m.date).startsWith(currentMonth));
+        const monthMeals = (mealsRes.data || []).filter(m => String(m.date).startsWith(bounds.month));
         const mealTotal = monthMeals.reduce((acc, m) => acc + (m.totalCost || 0), 0);
         const mealsCount = monthMeals.filter(m => m.totalCost > 0).length;
-        const monthExpenses = (expensesRes.data || []).filter(e => String(e.date).startsWith(currentMonth));
+        const monthExpenses = (expensesRes.data || []).filter(e => String(e.date).startsWith(bounds.month));
         const expenseTotal = monthExpenses.reduce((acc, e) => acc + (e.amount || 0), 0);
         const totalPayments = (paymentsRes.data || []).reduce((acc, p) => acc + (p.amount || 0), 0);
         const currentMonthTotal = mealTotal + expenseTotal;
@@ -302,7 +318,7 @@ router.get('/meals/today', requireAuth, async (req, res) => {
     try {
         const authUser = req.authUser;
         const userId = authUser.id;
-        const today = new Date().toISOString().split('T')[0];
+        const today = req.query.date || new Date().toISOString().split('T')[0];
         const { data: meal } = await supabase_js_1.supabaseAdmin
             .from('Meal')
             .select('*')
@@ -328,6 +344,7 @@ router.post('/meals', requireAuth, validate(spendly_shared_1.RecordMealSchema), 
         const authUser = req.authUser;
         const userId = authUser.id;
         const { date, lunch, dinner } = req.body;
+        const cleanDate = String(date).slice(0, 10);
         const ws = await getOrCreateWorkspace();
         // Get latest meal price
         const { data: priceObj } = await supabase_js_1.supabaseAdmin
@@ -347,7 +364,7 @@ router.post('/meals', requireAuth, validate(spendly_shared_1.RecordMealSchema), 
             .upsert([{
                 workspaceId: ws.id,
                 userId,
-                date,
+                date: cleanDate,
                 lunch,
                 dinner,
                 lunchCost,
@@ -370,13 +387,13 @@ router.get('/meals/month', requireAuth, async (req, res) => {
     try {
         const authUser = req.authUser;
         const userId = authUser.id;
-        const month = req.query.month || new Date().toISOString().slice(0, 7);
+        const bounds = getMonthBounds(req.query.month);
         const { data: meals } = await supabase_js_1.supabaseAdmin
             .from('Meal')
             .select('*')
             .eq('userId', userId)
-            .gte('date', `${month}-01`)
-            .lte('date', `${month}-31`);
+            .gte('date', bounds.startDate)
+            .lte('date', bounds.endDate);
         return res.json({ meals: meals || [] });
     }
     catch (err) {
@@ -388,24 +405,21 @@ router.get('/meals/missing', requireAuth, async (req, res) => {
     try {
         const authUser = req.authUser;
         const userId = authUser.id;
-        const month = req.query.month || new Date().toISOString().slice(0, 7);
+        const bounds = getMonthBounds(req.query.month);
         const { data: meals } = await supabase_js_1.supabaseAdmin
             .from('Meal')
             .select('date')
             .eq('userId', userId)
-            .gte('date', `${month}-01`)
-            .lte('date', `${month}-31`);
+            .gte('date', bounds.startDate)
+            .lte('date', bounds.endDate);
         const recordedDates = new Set((meals || []).map(m => String(m.date || '').slice(0, 10)));
         const today = new Date();
-        const year = parseInt(month.split('-')[0]);
-        const monthNum = parseInt(month.split('-')[1]);
-        const daysInMonth = new Date(year, monthNum, 0).getDate();
-        const currentDay = today.getFullYear() === year && today.getMonth() + 1 === monthNum
+        const currentDay = today.getFullYear() === bounds.year && today.getMonth() + 1 === bounds.monthNum
             ? today.getDate()
-            : daysInMonth;
+            : bounds.lastDay;
         const missing = [];
         for (let d = 1; d < currentDay; d++) {
-            const dateStr = `${month}-${String(d).padStart(2, '0')}`;
+            const dateStr = `${bounds.month}-${String(d).padStart(2, '0')}`;
             if (!recordedDates.has(dateStr))
                 missing.push(dateStr);
         }
@@ -531,7 +545,22 @@ router.get('/payments', requireAuth, async (req, res) => {
             .order('createdAt', { ascending: false });
         if (error)
             return res.status(400).json({ error: error.message });
-        return res.json({ payments: payments || [] });
+        const paymentsWithProofs = await Promise.all((payments || []).map(async (item) => {
+            let proofUrl = null;
+            if (item.screenshotPath) {
+                try {
+                    const { data } = await supabase_js_1.supabaseAdmin.storage
+                        .from('payment-proofs')
+                        .createSignedUrl(item.screenshotPath, 3600);
+                    proofUrl = data?.signedUrl || null;
+                }
+                catch {
+                    proofUrl = null;
+                }
+            }
+            return { ...item, proofUrl };
+        }));
+        return res.json({ payments: paymentsWithProofs });
     }
     catch (err) {
         return res.status(500).json({ error: err.message });
@@ -869,7 +898,7 @@ router.post('/admin/prices', requireAuth, requireAdmin, validate(spendly_shared_
     try {
         const { halfPrice, fullPrice } = req.body;
         const ws = await getOrCreateWorkspace();
-        const currentMonth = new Date().toISOString().slice(0, 7);
+        const bounds = getMonthBounds();
         // 1. Insert new MealPrice entry
         const { data: priceData, error } = await supabase_js_1.supabaseAdmin
             .from('MealPrice')
@@ -890,9 +919,9 @@ router.post('/admin/prices', requireAuth, requireAdmin, validate(spendly_shared_
             .from('Meal')
             .select('*')
             .eq('workspaceId', ws.id)
-            .gte('date', `${currentMonth}-01`)
-            .lte('date', `${currentMonth}-31`);
-        if (activeMeals && activeMeals.length > 0 && !lockedMonths.has(currentMonth)) {
+            .gte('date', bounds.startDate)
+            .lte('date', bounds.endDate);
+        if (activeMeals && activeMeals.length > 0 && !lockedMonths.has(bounds.month)) {
             for (const meal of activeMeals) {
                 const lunchCost = meal.lunch === 'FULL' ? fullPrice : meal.lunch === 'HALF' ? halfPrice : 0;
                 const dinnerCost = meal.dinner === 'FULL' ? fullPrice : meal.dinner === 'HALF' ? halfPrice : 0;
@@ -914,6 +943,7 @@ router.post('/admin/month-lock', requireAuth, requireAdmin, validate(spendly_sha
     try {
         const { month, lock } = req.body;
         const ws = await getOrCreateWorkspace();
+        const bounds = getMonthBounds(month);
         if (lock) {
             // Lock: generate snapshots for all workspace members
             const { data: members } = await supabase_js_1.supabaseAdmin
@@ -924,8 +954,8 @@ router.post('/admin/month-lock', requireAuth, requireAdmin, validate(spendly_sha
             for (const member of members || []) {
                 const uid = member.userId;
                 const [mealsRes, expensesRes, paymentsRes] = await Promise.all([
-                    supabase_js_1.supabaseAdmin.from('Meal').select('totalCost').eq('userId', uid).gte('date', `${month}-01`).lte('date', `${month}-31`),
-                    supabase_js_1.supabaseAdmin.from('Expense').select('amount').eq('userId', uid).gte('date', `${month}-01`).lte('date', `${month}-31`),
+                    supabase_js_1.supabaseAdmin.from('Meal').select('totalCost').eq('userId', uid).gte('date', bounds.startDate).lte('date', bounds.endDate),
+                    supabase_js_1.supabaseAdmin.from('Expense').select('amount').eq('userId', uid).gte('date', bounds.startDate).lte('date', bounds.endDate),
                     supabase_js_1.supabaseAdmin.from('Payment').select('amount').eq('userId', uid).eq('status', 'APPROVED'),
                 ]);
                 const mealTotal = (mealsRes.data || []).reduce((s, m) => s + (m.totalCost || 0), 0);
@@ -935,7 +965,7 @@ router.post('/admin/month-lock', requireAuth, requireAdmin, validate(spendly_sha
                 snapshots.push({
                     workspaceId: ws.id,
                     userId: uid,
-                    month,
+                    month: bounds.month,
                     mealTotal,
                     expenseTotal,
                     paymentTotal,
@@ -951,7 +981,7 @@ router.post('/admin/month-lock', requireAuth, requireAdmin, validate(spendly_sha
                 if (error)
                     return res.status(400).json({ error: error.message });
             }
-            return res.json({ success: true, action: 'locked', month, snapshotsCreated: snapshots.length });
+            return res.json({ success: true, action: 'locked', month: bounds.month, snapshotsCreated: snapshots.length });
         }
         else {
             // Unlock: update existing snapshots to OPEN
@@ -959,10 +989,10 @@ router.post('/admin/month-lock', requireAuth, requireAdmin, validate(spendly_sha
                 .from('MonthlySnapshot')
                 .update({ isLocked: false, status: 'OPEN' })
                 .eq('workspaceId', ws.id)
-                .eq('month', month);
+                .eq('month', bounds.month);
             if (error)
                 return res.status(400).json({ error: error.message });
-            return res.json({ success: true, action: 'unlocked', month });
+            return res.json({ success: true, action: 'unlocked', month: bounds.month });
         }
     }
     catch (err) {
@@ -975,10 +1005,10 @@ router.get('/reports/monthly', requireAuth, async (req, res) => {
     try {
         const authUser = req.authUser;
         const userId = authUser.id;
-        const month = req.query.month || new Date().toISOString().slice(0, 7);
+        const bounds = getMonthBounds(req.query.month);
         const [mealsRes, expensesRes, paymentsRes] = await Promise.all([
-            supabase_js_1.supabaseAdmin.from('Meal').select('*').eq('userId', userId).gte('date', `${month}-01`).lte('date', `${month}-31`),
-            supabase_js_1.supabaseAdmin.from('Expense').select('*').eq('userId', userId).gte('date', `${month}-01`).lte('date', `${month}-31`),
+            supabase_js_1.supabaseAdmin.from('Meal').select('*').eq('userId', userId).gte('date', bounds.startDate).lte('date', bounds.endDate),
+            supabase_js_1.supabaseAdmin.from('Expense').select('*').eq('userId', userId).gte('date', bounds.startDate).lte('date', bounds.endDate),
             supabase_js_1.supabaseAdmin.from('Payment').select('amount').eq('userId', userId).eq('status', 'APPROVED'),
         ]);
         const mealTotal = (mealsRes.data || []).reduce((acc, m) => acc + (m.totalCost || 0), 0);
@@ -997,7 +1027,7 @@ router.get('/reports/monthly', requireAuth, async (req, res) => {
             pct: totalSpent > 0 ? Math.round((amount / totalSpent) * 100) + '%' : '0%',
         }));
         return res.json({
-            month,
+            month: bounds.month,
             mealTotal,
             expenseTotal,
             paymentTotal,
@@ -1013,14 +1043,58 @@ router.get('/reports/monthly', requireAuth, async (req, res) => {
 router.get('/history', requireAuth, async (req, res) => {
     try {
         const authUser = req.authUser;
+        const userId = authUser.id;
+        // 1. Query locked snapshots
         const { data: snapshots, error } = await supabase_js_1.supabaseAdmin
             .from('MonthlySnapshot')
             .select('*')
-            .eq('userId', authUser.id)
+            .eq('userId', userId)
             .order('month', { ascending: false });
         if (error)
             return res.status(400).json({ error: error.message });
-        return res.json({ history: snapshots || [] });
+        const lockedSet = new Set((snapshots || []).map((s) => s.month));
+        // 2. Discover distinct active/past months from Meal and Expense records
+        const [mealsRes, expensesRes] = await Promise.all([
+            supabase_js_1.supabaseAdmin.from('Meal').select('date').eq('userId', userId),
+            supabase_js_1.supabaseAdmin.from('Expense').select('date').eq('userId', userId),
+        ]);
+        const activeMonths = new Set();
+        (mealsRes.data || []).forEach(m => {
+            if (m.date)
+                activeMonths.add(String(m.date).slice(0, 7));
+        });
+        (expensesRes.data || []).forEach(e => {
+            if (e.date)
+                activeMonths.add(String(e.date).slice(0, 7));
+        });
+        // 3. For active months without locked snapshots, dynamically compute monthly summary
+        const dynamicSnapshots = [];
+        for (const m of activeMonths) {
+            if (!lockedSet.has(m)) {
+                const bounds = getMonthBounds(m);
+                const [mRes, eRes, pRes] = await Promise.all([
+                    supabase_js_1.supabaseAdmin.from('Meal').select('totalCost').eq('userId', userId).gte('date', bounds.startDate).lte('date', bounds.endDate),
+                    supabase_js_1.supabaseAdmin.from('Expense').select('amount').eq('userId', userId).gte('date', bounds.startDate).lte('date', bounds.endDate),
+                    supabase_js_1.supabaseAdmin.from('Payment').select('amount').eq('userId', userId).eq('status', 'APPROVED'),
+                ]);
+                const mealTotal = (mRes.data || []).reduce((acc, item) => acc + (item.totalCost || 0), 0);
+                const expenseTotal = (eRes.data || []).reduce((acc, item) => acc + (item.amount || 0), 0);
+                const paymentTotal = (pRes.data || []).reduce((acc, item) => acc + (item.amount || 0), 0);
+                const balanceDue = Math.max(0, mealTotal + expenseTotal - paymentTotal);
+                dynamicSnapshots.push({
+                    id: `dyn_${m}`,
+                    month: m,
+                    mealTotal,
+                    expenseTotal,
+                    paymentTotal,
+                    balanceDue,
+                    status: 'OPEN',
+                    isLocked: false,
+                });
+            }
+        }
+        const combined = [...(snapshots || []), ...dynamicSnapshots].sort((a, b) => b.month.localeCompare(a.month));
+        return res.json({ history: combined });
     }
     catch (err) {
         return res.status(500).json({ error: err.message });
@@ -1031,12 +1105,12 @@ router.get('/history/snapshot-details', requireAuth, async (req, res) => {
     try {
         const authUser = req.authUser;
         const userId = authUser.id;
-        const month = req.query.month || new Date().toISOString().slice(0, 7);
+        const bounds = getMonthBounds(req.query.month);
         const [snapshotRes, mealsRes, expensesRes, paymentsRes] = await Promise.all([
-            supabase_js_1.supabaseAdmin.from('MonthlySnapshot').select('*').eq('userId', userId).eq('month', month).maybeSingle(),
-            supabase_js_1.supabaseAdmin.from('Meal').select('*').eq('userId', userId).gte('date', `${month}-01`).lte('date', `${month}-31`).order('date', { ascending: true }),
-            supabase_js_1.supabaseAdmin.from('Expense').select('*').eq('userId', userId).gte('date', `${month}-01`).lte('date', `${month}-31`).order('date', { ascending: true }),
-            supabase_js_1.supabaseAdmin.from('Payment').select('*').eq('userId', userId).gte('date', `${month}-01`).lte('date', `${month}-31`).order('date', { ascending: true }),
+            supabase_js_1.supabaseAdmin.from('MonthlySnapshot').select('*').eq('userId', userId).eq('month', bounds.month).maybeSingle(),
+            supabase_js_1.supabaseAdmin.from('Meal').select('*').eq('userId', userId).gte('date', bounds.startDate).lte('date', bounds.endDate).order('date', { ascending: true }),
+            supabase_js_1.supabaseAdmin.from('Expense').select('*').eq('userId', userId).gte('date', bounds.startDate).lte('date', bounds.endDate).order('date', { ascending: true }),
+            supabase_js_1.supabaseAdmin.from('Payment').select('*').eq('userId', userId).gte('date', bounds.startDate).lte('date', bounds.endDate).order('date', { ascending: true }),
         ]);
         const snapshot = snapshotRes.data;
         const meals = mealsRes.data || [];
@@ -1063,7 +1137,7 @@ router.get('/history/snapshot-details', requireAuth, async (req, res) => {
         const totalSpent = mealTotal + expenseTotal;
         const balanceDue = Math.max(0, totalSpent - paymentTotal);
         return res.json({
-            month,
+            month: bounds.month,
             snapshot,
             meals,
             expenses,

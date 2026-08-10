@@ -1,116 +1,214 @@
-# 🗄️ Spendly — Database & Supabase Guide
+# 🗄️ Spendly — Database & Supabase Architecture Guide
 
-This document describes the database schema, Prisma configuration, Supabase setup, and storage bucket requirements for **Spendly**.
+This document describes the PostgreSQL relational schema, Prisma configuration, Row-Level Security (RLS) policies, and Supabase Storage bucket specifications for **Spendly**.
 
 ---
 
-## 🏗️ Schema Overview
+## 🏗️ Relational Data Model Architecture
 
-Spendly uses **PostgreSQL** hosted on **Supabase** with **Prisma ORM** for type-safe database queries.
+Spendly uses **PostgreSQL 15+** hosted on **Supabase**, managed via **Prisma ORM** (`server/prisma/schema.prisma`) and the **Supabase Admin SDK** (`supabaseAdmin`).
 
 ```
-+-------------------+      +--------------------+      +--------------------+
-|     User (Auth)   | ---> |     Workspace      | ---> |     MealPrice      |
-+-------------------+      +--------------------+      +--------------------+
-          |                          |
-          v                          v
-+-------------------+      +--------------------+
-|    MealEntry      |      |   DailyExpense     |
-+-------------------+      +--------------------+
-          |                          |
-          v                          v
-+-------------------+      +--------------------+
-|      Payment      |      |  MonthlySnapshot   |
-+-------------------+      +--------------------+
++-------------------------------------------------------------------------+
+|                                Workspace                                |
+|             id (UUID), name (text), code (text, UNIQUE)                 |
++-------------------------------------------------------------------------+
+       |                  |                    |                  |
+       |                  |                    |                  |
+       v                  v                    v                  v
++--------------+  +---------------+  +------------------+  +--------------+
+|     User     |  | WorkspaceMem  |  |    MealPrice     |  | ExpenseCateg |
+|  id (text)   |  | workspaceId   |  |  halfPrice (flt) |  |  name (text) |
+| email (text) |  | userId (text) |  |  fullPrice (flt) |  | isDefault(b) |
+| role (Role)  |  | role (Role)   |  | effectiveFrom(ts)|  +--------------+
++--------------+  +---------------+  +------------------+
+       |                                       |
+       +-------------------+-------------------+
+                           |
+       +-------------------+-------------------+-------------------+
+       |                   |                   |                   |
+       v                   v                   v                   v
++--------------+   +---------------+   +---------------+   +---------------+
+|     Meal     |   |    Expense    |   |    Payment    |   | MonthlySnap   |
+| workspaceId  |   | workspaceId   |   | workspaceId   |   | workspaceId   |
+| userId       |   | userId        |   | userId        |   | userId        |
+| date (date)  |   | category(txt) |   | type (Type)   |   | month(YYYY-MM)|
+| lunch(Option)|   | amount (flt)  |   | amount (flt)  |   | mealTotal(flt)|
+| dinner(Opt)  |   | date (date)   |   | screenshot(tx)|   | expenseTot(fl)|
+| totalCost    |   +---------------+   | status(Status)|   | paymentTot(fl)|
++--------------+                       +---------------+   | balanceDue(fl)|
+                                                           | isLocked(bool)|
+                                                           +---------------+
 ```
 
 ---
 
-## 📊 Database Models
+## 📊 Detailed Database Tables
 
-### 1. `User`
-Stores user profile information synced with Supabase Auth.
-- `id`: UUID (Primary Key)
-- `email`: String (Unique)
-- `name`: String
-- `role`: Enum (`STUDENT`, `ADMIN`, `SUPER_ADMIN`)
-- `workspaceId`: UUID (Foreign Key)
+### 1. `Workspace`
+Stores workspace information for hostels or PGs.
+- `id`: `String` (UUID, Primary Key)
+- `name`: `String` (Name of workspace)
+- `code`: `String` (Unique workspace code, default: `SPENDLY_HOSTEL`)
+- `createdAt`: `DateTime` (Timestamp)
+- `updatedAt`: `DateTime` (Timestamp)
 
-### 2. `Workspace`
-Represents a hostel or PG unit.
-- `id`: UUID (Primary Key)
-- `name`: String
-- `code`: String (Unique, e.g. `HOSTEL-A1`)
+### 2. `User`
+Stores user profile information synced with Supabase Auth (`auth.users`).
+- `id`: `String` (Primary Key, mirrors `auth.users.id` UUID)
+- `email`: `String` (Unique)
+- `fullName`: `String`
+- `phone`: `String?` (Optional)
+- `avatarUrl`: `String?` (Optional)
+- `role`: `Role` Enum (`STUDENT`, `ADMIN`, `SUPER_ADMIN`, Default: `STUDENT`)
+- `createdAt`: `DateTime`
+- `updatedAt`: `DateTime`
 
-### 3. `MealPrice`
-Versioned pricing for tiffin meals.
-- `id`: UUID
-- `workspaceId`: UUID
-- `halfPrice`: Decimal
-- `fullPrice`: Decimal
-- `effectiveFrom`: DateTime
+### 3. `WorkspaceMember`
+Junction table linking Users to Workspaces.
+- `id`: `String` (UUID, Primary Key)
+- `workspaceId`: `String` (Foreign Key -> `Workspace.id`)
+- `userId`: `String` (Foreign Key -> `User.id`)
+- `role`: `Role` Enum (`STUDENT`, `ADMIN`, `SUPER_ADMIN`)
+- `joinedAt`: `DateTime`
+- **Constraint**: `UNIQUE(workspaceId, userId)`
 
-### 4. `MealEntry`
-Daily meal records.
-- `id`: UUID
-- `userId`: UUID
-- `date`: String (`YYYY-MM-DD`)
-- `lunch`: Enum (`HALF`, `FULL`, `SKIP`)
-- `dinner`: Enum (`HALF`, `FULL`, `SKIP`)
-- `cost`: Decimal
+### 4. `MealPrice`
+Stores current and historical meal rates per workspace.
+- `id`: `String` (UUID, Primary Key)
+- `workspaceId`: `String` (Foreign Key -> `Workspace.id`)
+- `halfPrice`: `Float` (Price for a half meal, e.g. 50.0)
+- `fullPrice`: `Float` (Price for a full meal, e.g. 80.0)
+- `effectiveFrom`: `DateTime` (Effective timestamp)
 
-### 5. `DailyExpense`
-Personal categorized daily expenses.
-- `id`: UUID
-- `userId`: UUID
-- `category`: String
-- `amount`: Decimal
-- `note`: String
-- `date`: String (`YYYY-MM-DD`)
+### 5. `Meal`
+Daily lunch and dinner tracking per user per date.
+- `id`: `String` (UUID, Primary Key)
+- `workspaceId`: `String` (Foreign Key -> `Workspace.id`)
+- `userId`: `String` (Foreign Key -> `User.id`)
+- `date`: `DateTime` (`@db.Date`, YYYY-MM-DD)
+- `lunch`: `MealOption` Enum (`HALF`, `FULL`, `SKIP`, Default: `SKIP`)
+- `dinner`: `MealOption` Enum (`HALF`, `FULL`, `SKIP`, Default: `SKIP`)
+- `lunchCost`: `Float` (Cost calculated at entry time)
+- `dinnerCost`: `Float` (Cost calculated at entry time)
+- `totalCost`: `Float` (Lunch cost + Dinner cost)
+- **Constraint**: `UNIQUE(workspaceId, userId, date)`
 
-### 6. `Payment`
-Payment logs and verification proof.
-- `id`: UUID
-- `userId`: UUID
-- `amount`: Decimal
-- `type`: Enum (`CASH`, `UPI`)
-- `proofUrl`: String (Supabase Storage URL for UPI screenshots)
-- `status`: Enum (`PENDING`, `APPROVED`, `REJECTED`)
-- `note`: String
-- `date`: String (`YYYY-MM-DD`)
+### 6. `ExpenseCategory`
+Pre-seeded system expense categories.
+- `id`: `String` (UUID, Primary Key)
+- `name`: `String` (Unique category name: `Food`, `Tea`, `Snacks`, `Grocery`, `Laundry`, `Travel`, `Medical`, `Shopping`, `Other`)
+- `isDefault`: `Boolean` (Default: `true`)
 
-### 7. `MonthlySnapshot`
-Immutable end-of-month snapshot records.
-- `id`: UUID
-- `userId`: UUID
-- `month`: String (`YYYY-MM`)
-- `totalMeals`: Decimal
-- `totalExpenses`: Decimal
-- `totalPaid`: Decimal
-- `balance`: Decimal
-- `status`: Enum (`OPEN`, `LOCKED`)
+### 7. `Expense`
+Personal daily spending logs.
+- `id`: `String` (UUID, Primary Key)
+- `workspaceId`: `String` (Foreign Key -> `Workspace.id`)
+- `userId`: `String` (Foreign Key -> `User.id`)
+- `category`: `String` (Category name)
+- `amount`: `Float` (Amount spent)
+- `note`: `String?` (Optional note)
+- `date`: `DateTime` (`@db.Date`, YYYY-MM-DD)
+- `createdAt`: `DateTime`
+
+### 8. `Payment`
+Cash and UPI payment submissions.
+- `id`: `String` (UUID, Primary Key)
+- `workspaceId`: `String` (Foreign Key -> `Workspace.id`)
+- `userId`: `String` (Foreign Key -> `User.id`)
+- `type`: `PaymentType` Enum (`CASH`, `UPI`)
+- `amount`: `Float` (Payment amount)
+- `screenshotPath`: `String?` (Storage filepath in `payment-proofs` bucket)
+- `note`: `String?` (Optional transaction reference note)
+- `date`: `DateTime` (`@db.Date`, YYYY-MM-DD)
+- `status`: `PaymentStatus` Enum (`PENDING`, `APPROVED`, `REJECTED`, Default: `PENDING`)
+- `verifiedBy`: `String?` (User ID of verifying admin)
+- `createdAt`: `DateTime`
+
+### 9. `MonthlySnapshot`
+Immutable monthly balance snapshots generated on month lock.
+- `id`: `String` (UUID, Primary Key)
+- `workspaceId`: `String` (Foreign Key -> `Workspace.id`)
+- `userId`: `String` (Foreign Key -> `User.id`)
+- `month`: `String` (Format: `YYYY-MM`)
+- `mealTotal`: `Float` (Sum of meal costs for month)
+- `expenseTotal`: `Float` (Sum of expenses for month)
+- `paymentTotal`: `Float` (Sum of approved payments for month)
+- `balanceDue`: `Float` (`mealTotal + expenseTotal - paymentTotal`)
+- `status`: `MonthStatus` Enum (`OPEN`, `CLOSED`, `PAID`, `PENDING`, Default: `OPEN`)
+- `isLocked`: `Boolean` (Default: `false`, set to `true` on lock)
+- **Constraint**: `UNIQUE(workspaceId, userId, month)`
+
+### 10. `AuditLog`
+Administrative action audit entries.
+- `id`: `String` (UUID, Primary Key)
+- `workspaceId`: `String` (Foreign Key -> `Workspace.id`)
+- `actorId`: `String` (Foreign Key -> `User.id`)
+- `action`: `String` (Action name)
+- `resource`: `String` (Target resource)
+- `oldValue`: `Json?`
+- `newValue`: `Json?`
+- `createdAt`: `DateTime`
 
 ---
 
-## 📦 Supabase Storage Setup
+## 🔀 Database Enums
 
-UPI proof screenshots are stored in Supabase Storage.
+```prisma
+enum Role {
+  STUDENT
+  ADMIN
+  SUPER_ADMIN
+}
 
-### Storage Bucket Setup Steps:
-1. Log into [Supabase Dashboard](https://app.supabase.com).
-2. Navigate to **Storage > Buckets**.
-3. Create a new bucket named: `payment-proofs`.
-4. Enable **Public Bucket** toggle.
-5. Add an RLS Policy to allow authenticated users to upload files and public readers to view proof images.
+enum MealOption {
+  HALF
+  FULL
+  SKIP
+}
+
+enum PaymentType {
+  CASH
+  UPI
+}
+
+enum PaymentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum MonthStatus {
+  OPEN
+  CLOSED
+  PAID
+  PENDING
+}
+```
 
 ---
 
-## 🔄 Migrations & Database Commands
+## 🔒 Supabase Storage Bucket Specifications
 
-### Apply Schema to Supabase PostgreSQL:
+- **Bucket Name**: `payment-proofs`
+- **Visibility**: **Private** (`public: false`)
+- **Folder Convention**: `${userId}/${timestamp}_${sanitizedFilename}`
+- **Security Access**:
+  - Direct public access is disabled.
+  - Express backend (`supabaseAdmin`) issues short-lived 1-hour signed access URLs (`createSignedUrl`) when admins request proof screenshot preview.
+
+---
+
+## 🛠️ Database Setup & Migration Execution
+
+### Option A: Via Prisma CLI
 ```bash
+# Generate Prisma Client
+npm run prisma:generate
+
+# Push schema directly to Supabase PostgreSQL
 npm run --workspace=server prisma db push
 ```
 
-### Export SQL Schema / Supabase Migration Script:
-The raw SQL migration file is stored in `docs/supabase_migration.sql` for direct execution via Supabase SQL Editor if needed.
+### Option B: Via Supabase SQL Editor
+Run the idempotent SQL script located at [docs/supabase_migration.sql](file:///c:/Users/Taheer/Desktop/Spendly/docs/supabase_migration.sql) directly inside the Supabase SQL Editor.

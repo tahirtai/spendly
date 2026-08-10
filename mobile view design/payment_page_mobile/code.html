@@ -1,0 +1,160 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Spendly - Payments</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<style data-purpose="custom-fonts">
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+  </style>
+<style data-purpose="custom-styles">
+    /* Hide scrollbar for clean mobile look */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"></head>
+<body class="bg-surface text-on-surface antialiased h-screen flex flex-col no-scrollbar font-['Manrope']">
+<!-- BEGIN: Header -->
+<header class="bg-white px-4 py-4 sticky top-0 z-10 border-b border-gray-200 flex items-center gap-3">
+<!-- Menu Icon (Placeholder for sidebar toggle) -->
+<button class="p-2 -ml-2 text-gray-500 hover:bg-gray-100 rounded-lg">
+<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</button>
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<div>
+<h1 class="text-xl font-bold leading-tight">Spendly</h1>
+<span class="text-[10px] font-medium bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded-full inline-block">Hostel Platform</span>
+</div>
+</div>
+</header>
+<!-- END: Header -->
+<!-- BEGIN: Main Content -->
+<main class="flex-1 overflow-y-auto px-4 py-6 pb-24">
+<div class="mb-6">
+<h2 class="text-headline-md text-on-surface flex items-center gap-2 mb-1">
+<svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+        Payments
+      </h2>
+<p class="text-sm text-gray-500">Submit UPI proofs or record cash payments.</p>
+</div>
+<!-- BEGIN: Payment Form Section -->
+<section class="bg-surface-container-low/70 backdrop-blur-xl rounded-xl border border-outline-variant p-5 mb-8">
+<h3 class="text-lg font-semibold mb-4 text-slate-800">Submit New Payment</h3>
+<!-- Segmented Toggle -->
+<div class="flex p-1 bg-gray-100 rounded-lg mb-5 text-sm font-medium">
+<button class="flex-1 py-2 text-center bg-indigo-600 text-white rounded-md shadow-sm">
+          UPI Payment
+        </button>
+<button class="flex-1 py-2 text-center text-gray-600 hover:text-gray-900 rounded-md">
+          Cash Payment
+        </button>
+</div>
+<form class="space-y-4">
+<!-- Amount -->
+<div>
+<label class="block text-sm font-medium text-gray-700 mb-1" for="amount">Payment Amount (₹)</label>
+<input class="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" id="amount" placeholder="e.g. 2000" type="number">
+</div>
+<!-- Date -->
+<div>
+<label class="block text-sm font-medium text-gray-700 mb-1" for="date">Date</label>
+<input class="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-gray-700" id="date" type="date" value="2026-08-07">
+</div>
+<!-- Note -->
+<div>
+<label class="block text-sm font-medium text-gray-700 mb-1" for="note">Note / Reference</label>
+<input class="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" id="note" placeholder="e.g. August Mess Fee" type="text">
+</div>
+<!-- File Upload -->
+<div>
+<label class="block text-sm font-medium text-gray-700 mb-1">
+            UPI Screenshot Proof <span class="text-red-500">*Required</span>
+</label>
+<div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg bg-gray-50 hover:bg-gray-100 cursor-pointer transition-colors">
+<div class="space-y-1 text-center">
+<svg aria-hidden="true" class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 48 48">
+<path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<div class="flex text-sm text-gray-600 justify-center">
+<span class="relative cursor-pointer rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
+                  Click to select screenshot
+                </span>
+</div>
+<p class="text-xs text-gray-500">PNG, JPEG up to 5MB</p>
+</div>
+</div>
+</div>
+<!-- Submit Button -->
+<button class="w-full mt-4 bg-primary-container text-on-primary font-semibold py-3 px-4 rounded-lg text-label-md" type="button">
+          Submit Payment
+        </button>
+</form>
+</section>
+<!-- END: Payment Form Section -->
+<!-- BEGIN: Payment History Section -->
+<section>
+<h3 class="text-lg font-semibold mb-4 text-slate-800">My Payment History</h3>
+<div class="space-y-3">
+<!-- History Card 1: Pending -->
+<div class="bg-surface-container-low/70 backdrop-blur-xl p-4 rounded-xl border border-outline-variant flex justify-between items-start">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="font-bold text-lg">₹7887.96</span>
+<span class="text-xs font-semibold bg-gray-100 text-gray-600 px-2 py-0.5 rounded">UPI</span>
+<span class="text-xs font-semibold bg-amber-50 text-amber-600 border border-amber-200 px-2 py-0.5 rounded-full">PENDING</span>
+</div>
+<div class="text-sm text-gray-500">2026-08-07</div>
+</div>
+<button class="text-gray-400 hover:text-red-500 transition-colors p-1">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</button>
+</div>
+<!-- History Card 2: Approved -->
+<div class="bg-surface-container-low/70 backdrop-blur-xl p-4 rounded-xl border border-outline-variant flex justify-between items-start">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="font-bold text-lg">₹2200</span>
+<span class="text-xs font-semibold bg-gray-100 text-gray-600 px-2 py-0.5 rounded">UPI</span>
+<span class="text-xs font-semibold bg-emerald-50 text-emerald-600 border border-emerald-200 px-2 py-0.5 rounded-full">APPROVED</span>
+</div>
+<div class="text-sm text-gray-500">2026-08-07 • room rent</div>
+</div>
+</div>
+<!-- History Card 3: Approved -->
+<div class="bg-surface-container-low/70 backdrop-blur-xl p-4 rounded-xl border border-outline-variant flex justify-between items-start">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="font-bold text-lg">₹2460</span>
+<span class="text-xs font-semibold bg-gray-100 text-gray-600 px-2 py-0.5 rounded">UPI</span>
+<span class="text-xs font-semibold bg-emerald-50 text-emerald-600 border border-emerald-200 px-2 py-0.5 rounded-full">APPROVED</span>
+</div>
+<div class="text-sm text-gray-500">2026-08-06 • july fees</div>
+</div>
+</div>
+</div>
+</section>
+<!-- END: Payment History Section -->
+</main>
+<!-- END: Main Content -->
+<!-- BEGIN: Bottom Navigation -->
+<nav class="bg-white border-t border-gray-200 fixed bottom-0 w-full flex justify-around items-center pb-safe pt-2 px-2 z-20"><a class="flex flex-col items-center p-2 text-on-surface-variant" href="#"><span class="material-symbols-outlined">dashboard</span><span class="text-label-sm mt-1">Dashboard</span></a><a class="flex flex-col items-center p-2 text-on-surface-variant" href="#"><span class="material-symbols-outlined">payments</span><span class="text-label-sm mt-1">Expenses</span></a><a class="flex flex-col items-center p-2 text-primary" href="#"><span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1">account_balance_wallet</span><span class="text-label-sm mt-1 font-bold">Payments</span></a><a class="flex flex-col items-center p-2 text-on-surface-variant" href="#"><span class="material-symbols-outlined">person</span><span class="text-label-sm mt-1">Profile</span></a></nav>
+<!-- END: Bottom Navigation -->
+
+
+</body></html>

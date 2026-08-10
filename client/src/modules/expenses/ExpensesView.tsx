@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Receipt, Plus, Trash2, Edit2, Search, ChevronLeft, ChevronRight, Tag, X, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { api, ApiError } from '../../lib/api';
@@ -18,6 +19,7 @@ const DEFAULT_CATEGORIES = ['Food', 'Tea', 'Snacks', 'Grocery', 'Laundry', 'Trav
 export const ExpensesView: React.FC = () => {
   const { user } = useAuthStore();
   const { today } = useAutoDate();
+  const location = useLocation();
 
   const [expenses, setExpenses] = useState<ExpenseItem[]>([]);
   const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES);
@@ -43,7 +45,14 @@ export const ExpensesView: React.FC = () => {
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [formStatus, setFormStatus] = useState<'' | 'success' | 'error'>('');
+  const [isAddSheetOpen, setIsAddSheetOpen] = useState(false);
 
+  // Open add modal when triggered via center nav + button
+  useEffect(() => {
+    if (location.search.includes('add=')) {
+      setIsAddSheetOpen(true);
+    }
+  }, [location.search]);
 
   // Edit Modal State
   const [editingExpense, setEditingExpense] = useState<ExpenseItem | null>(null);
@@ -101,6 +110,7 @@ export const ExpensesView: React.FC = () => {
       setAmount('');
       setNote('');
       setFormStatus('success');
+      setIsAddSheetOpen(false);
       setTimeout(() => setFormStatus(''), 2000);
       fetchExpenses();
     } catch (err: any) {
@@ -156,7 +166,7 @@ export const ExpensesView: React.FC = () => {
   const paginatedExpenses = expenses.slice((page - 1) * itemsPerPage, page * itemsPerPage);
 
   return (
-    <div className="space-y-8 p-6 max-w-7xl mx-auto">
+    <div className="mobile-page">
       {/* Light Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-200 pb-6">
         <div>
@@ -175,9 +185,107 @@ export const ExpensesView: React.FC = () => {
         </div>
       </div>
 
+      {/* Centered Floating Card Modal in Middle of Screen */}
+      {isAddSheetOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-slate-950/45 backdrop-blur-sm transition-opacity"
+            onClick={() => setIsAddSheetOpen(false)}
+          />
+
+          {/* Centered Card Shape Modal */}
+          <div className="relative z-10 w-full max-w-sm overflow-hidden rounded-[2rem] border border-white/90 bg-white/95 p-5 shadow-2xl backdrop-blur-2xl space-y-4 animate-in fade-in zoom-in-95">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h2 className="font-display text-base font-extrabold text-[#0b1c30] flex items-center gap-2">
+                <Plus className="w-4 h-4 text-[#4648d4]" /> Log New Expense
+              </h2>
+              <button
+                type="button"
+                onClick={() => setIsAddSheetOpen(false)}
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Form Fields */}
+            <div className="max-h-[75vh] overflow-y-auto pr-1 no-scrollbar">
+              {formErrors.form && (
+                <div className="bg-rose-50 border border-rose-200 text-rose-600 text-xs p-2.5 rounded-xl flex items-center gap-2 mb-3">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  <span>{formErrors.form}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleAddExpense} className="space-y-3">
+                <div>
+                  <label className="text-xs font-semibold text-[#464554] block mb-1">Category</label>
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="input-field py-2.5 text-xs cursor-pointer"
+                  >
+                    {categories.map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                  {formErrors.category && <p className="text-rose-500 text-[11px] mt-0.5">{formErrors.category}</p>}
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-[#464554] block mb-1">Amount (&#8377;)</label>
+                  <input
+                    type="number"
+                    placeholder="e.g. 150"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    className={`input-field py-2.5 text-xs ${formErrors.amount ? 'border-rose-400' : ''}`}
+                    min="0.01"
+                    step="0.01"
+                    required
+                  />
+                  {formErrors.amount && <p className="text-rose-500 text-[11px] mt-0.5">{formErrors.amount}</p>}
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-[#464554] block mb-1">Date</label>
+                  <input
+                    type="date"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    className="input-field py-2.5 text-xs cursor-pointer"
+                  />
+                  {formErrors.date && <p className="text-rose-500 text-[11px] mt-0.5">{formErrors.date}</p>}
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-[#464554] block mb-1">Note (Optional)</label>
+                  <input
+                    type="text"
+                    placeholder="What was this expense for?"
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    className="input-field py-2.5 text-xs"
+                    maxLength={200}
+                  />
+                </div>
+
+                <div className="pt-2">
+                  <button type="submit" className="btn-primary w-full py-3 text-xs font-bold shadow-lg shadow-indigo-600/30">
+                    <Plus className="w-4 h-4" /> Save Expense Record
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Expense Creation Form */}
-        <div className="stitch-card p-6 bg-white space-y-5 h-fit">
+        <div className="hidden">
           <h2 className="font-display font-bold text-base text-[#0b1c30] flex items-center gap-2">
             <Plus className="w-4 h-4 text-[#4648d4]" /> Log New Expense
           </h2>

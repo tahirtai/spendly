@@ -1,32 +1,86 @@
-# 🛡️ Spendly — Security & Compliance Guidelines
+# 🛡️ Spendly — Security & Threat Model Architecture
 
-Security is a primary design goal for **Spendly**. This document covers environment variable hygiene, authentication security, role authorization, and production server hardening.
-
----
-
-## 🔒 1. Secret Hygiene & Git Best Practices
-
-- **Never Commit Credentials**: Real API keys, passwords, database passwords, or JWT secrets must never be committed to Git.
-- **Environment Isolation**: Always separate development credentials from production credentials.
-- **`.gitignore` Enforcements**: `.env`, `.env.local`, and all `.env.*` files are strictly listed in `.gitignore`.
-- **Rotatable Keys**: Use Supabase Dashboard to rotate service role keys if leakage is ever suspected.
+This document details the security posture, authentication framework, authorization enforcement, storage access controls, and environment credential protection for **Spendly**.
 
 ---
 
-## 🔑 2. Authentication & Authorization Controls
+## 🔒 1. Credential Management & Environment Isolation
 
-- **Supabase Auth Integration**: User identity is verified using standard JWT bearer tokens issued by Supabase Auth.
-- **Role Hierarchy**:
-  - `STUDENT`: Access restricted strictly to own workspace and own records.
-  - `ADMIN`: Workspace-wide administrative access for verifying payments and locking months.
-  - `SUPER_ADMIN`: System-wide access.
-- **No Self-Promotion**: Public registration (`/auth/register`) strictly assigns the `STUDENT` role by default. Admin roles cannot be acquired via client requests.
+### Principles
+- **No Hardcoded Secrets**: Raw API keys, JWT secrets, database connection passwords, or service-role keys must NEVER be committed to version control.
+- **Environment Placeholders**: Documentation and setup guides use standardized placeholder strings (`YOUR_SUPABASE_URL`, `YOUR_SUPABASE_SERVICE_ROLE_KEY`, etc.).
+- **Strict `.gitignore` Enforcement**: Monorepo root `.gitignore` enforces exclusion of `.env`, `.env.local`, `.env.*`, and temporary log files.
+
+### Key Separation Architecture
+- **Client Workspace (`client/.env`)**:
+  - `VITE_API_URL`: Backend API endpoint string (`http://localhost:5000` or production URL).
+  - *No Supabase Service-Role key is EVER placed in client-side code.*
+- **Server Workspace (`server/.env`)**:
+  - `SUPABASE_SERVICE_ROLE_KEY`: Privileged key allowing backend administrative database and auth management. Isolated strictly on the Node.js server.
+  - `DATABASE_URL`: Direct PostgreSQL connection string.
 
 ---
 
-## 🌐 3. Server Security & Hardening
+## 🔑 2. Authentication & Authorization Framework
 
-- **Security Headers (`Helmet`)**: Express server utilizes `helmet` middleware to set HTTP security headers (`X-Frame-Options`, `X-Content-Type-Options`, `Content-Security-Policy`).
-- **Strict CORS**: Cross-Origin Resource Sharing (CORS) is configured using the `CLIENT_URL` environment variable to block unauthorized origins in production.
-- **Input Validation**: All incoming API requests undergo validation with TypeScript interfaces and Prisma parameterization to prevent SQL injection.
-- **Error Shielding**: Database tracebacks and sensitive internal stack traces are suppressed in production mode to prevent information disclosure.
+### Authentication Flow
+1. **Registration**: `POST /api/auth/register` creates an authenticated user in Supabase Auth (`supabaseAdmin.auth.admin.createUser`) and inserts a corresponding record in the PostgreSQL `User` table with default role `STUDENT`.
+2. **Login**: `POST /api/auth/login` authenticates user credentials via `supabase.auth.signInWithPassword` and returns a Supabase JWT Bearer token along with user profile metadata.
+3. **Session Persistence**: The frontend SPA persists the JWT token in browser `localStorage` (`spendly_auth_token`) and automatically attaches `Authorization: Bearer <token>` to all HTTP requests via `apiFetch()`.
+
+### Authorization Middleware
+- **JWT Verification (`requireAuth`)**: Server middleware extracts the bearer token and validates session validity via `supabase.auth.getUser(token)`. Requests missing valid tokens receive `401 Unauthorized`.
+- **Role Control (`requireAdmin`)**: Admin endpoints query the database `User` table for `req.authUser.id` and verify role equality to `ADMIN` or `SUPER_ADMIN`. Non-admin requests receive `403 Forbidden`.
+- **Role Escalation Protection**: Public registration endpoints strictly hardcode role assignment to `STUDENT`. Member role modifications can only be triggered via `PATCH /api/admin/members/:id/role` by authenticated `SUPER_ADMIN` accounts.
+
+---
+
+## 🛡️ 3. Database Security & Row Level Security (RLS)
+
+While the Express server operates using the Supabase Service-Role key to execute queries on behalf of authenticated users, PostgreSQL Row Level Security (RLS) is enabled on all tables as defense-in-depth against direct client-side SDK queries:
+
+```sql
+-- RLS Policy Examples (docs/supabase_migration.sql)
+ALTER TABLE "User" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can read own profile" ON "User" FOR SELECT USING (auth.uid()::text = id);
+
+ALTER TABLE "Meal" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can read own meals" ON "Meal" FOR SELECT USING (auth.uid()::text = "userId");
+
+ALTER TABLE "Expense" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can read own expenses" ON "Expense" FOR SELECT USING (auth.uid()::text = "userId");
+
+ALTER TABLE "Payment" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can read own payments" ON "Payment" FOR SELECT USING (auth.uid()::text = "userId");
+```
+
+---
+
+## 📁 4. Storage Security & File Upload Hardening
+
+UPI payment screenshot uploads undergo multi-layered validation:
+
+1. **In-Memory Buffer**: Files are parsed in-memory using `multer.memoryStorage()`, preventing unvalidated files from hitting local disk.
+2. **File Size Limit**: Upload size is capped at 5 MB (`5 * 1024 * 1024` bytes). Oversized files return HTTP `413 File Size Exceeds Limit`.
+3. **MIME Type Whitelist**: Strict checking restricts uploads to `image/png`, `image/jpeg`, and `image/webp`. Invalid MIME types return HTTP `400 Bad Request`.
+4. **Private Storage Bucket**: Uploaded screenshots are stored in the private `payment-proofs` Supabase bucket under `${userId}/${timestamp}_filename`. Direct public access is disabled.
+5. **Short-Lived Signed Access URLs**: Admins inspect screenshot proofs via signed URLs (`createSignedUrl`) generated on demand with a 3600-second (1 hour) expiration limit.
+
+---
+
+## 🌐 5. Network Hardening & Server Protections
+
+- **Disabled `x-powered-by` Header**: Prevents technology disclosure (`app.disable('x-powered-by')`).
+- **CORS Configuration**: Restricts origin requests to `http://localhost:5173` in dev mode and the specified `CLIENT_URL` domain in production.
+- **Input Sanitization & Type Safety**: API request bodies are parsed using Zod schemas (`safeParse`), rejecting malformed payloads before hitting controllers.
+- **Global Error Handling**: Express error handler suppresses database tracebacks in production, returning sanitized JSON error messages.
+
+---
+
+## 📋 6. Production Security Checklist
+
+- [ ] Verify `SUPABASE_SERVICE_ROLE_KEY` is set ONLY in server environment variables.
+- [ ] Confirm `NODE_ENV=production` is active on deployment server.
+- [ ] Ensure `CLIENT_URL` is set to the exact production frontend domain.
+- [ ] Verify database connection strings use SSL connection flags (`?sslmode=require`).
+- [ ] Change initial seed admin password immediately after deployment.

@@ -1,0 +1,640 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Spendly - Tiffin Tracking</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary-fixed": "#e1e0ff",
+                    "on-tertiary-fixed-variant": "#783200",
+                    "on-error": "#ffffff",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-dim": "#cbdbf5",
+                    "on-primary": "#ffffff",
+                    "on-secondary": "#ffffff",
+                    "secondary-fixed": "#6ffbbe",
+                    "error-container": "#ffdad6",
+                    "on-tertiary-fixed": "#341100",
+                    "surface-container": "#e5eeff",
+                    "on-tertiary-container": "#fffbff",
+                    "on-secondary-container": "#00714d",
+                    "on-primary-container": "#fffbff",
+                    "tertiary": "#994100",
+                    "background": "#f8f9ff",
+                    "secondary": "#006c49",
+                    "surface-container-highest": "#d3e4fe",
+                    "surface-container-low": "#eff4ff",
+                    "on-error-container": "#93000a",
+                    "on-surface-variant": "#464554",
+                    "on-tertiary": "#ffffff",
+                    "surface": "#f8f9ff",
+                    "on-surface": "#0b1c30",
+                    "on-background": "#0b1c30",
+                    "surface-variant": "#d3e4fe",
+                    "on-primary-fixed": "#07006c",
+                    "primary-fixed-dim": "#c0c1ff",
+                    "surface-bright": "#f8f9ff",
+                    "inverse-on-surface": "#eaf1ff",
+                    "outline-variant": "#c7c4d7",
+                    "primary": "#4648d4",
+                    "on-primary-fixed-variant": "#2f2ebe",
+                    "outline": "#767586",
+                    "on-secondary-fixed": "#002113",
+                    "inverse-surface": "#213145",
+                    "secondary-fixed-dim": "#4edea3",
+                    "surface-container-high": "#dce9ff",
+                    "primary-container": "#6063ee",
+                    "surface-tint": "#494bd6",
+                    "tertiary-container": "#c05400",
+                    "tertiary-fixed-dim": "#ffb690",
+                    "tertiary-fixed": "#ffdbca",
+                    "error": "#ba1a1a",
+                    "secondary-container": "#6cf8bb",
+                    "inverse-primary": "#c0c1ff",
+                    "on-secondary-fixed-variant": "#005236"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "sidebar-width": "280px",
+                    "container-max": "1440px",
+                    "lg": "24px",
+                    "xl": "40px",
+                    "xs": "4px",
+                    "md": "16px",
+                    "base": "4px",
+                    "sm": "8px",
+                    "2xl": "64px"
+            },
+            "fontFamily": {
+                    "label-md": [
+                            "Geist"
+                    ],
+                    "display-lg": [
+                            "Geist"
+                    ],
+                    "headline-lg": [
+                            "Geist"
+                    ],
+                    "label-sm": [
+                            "Geist"
+                    ],
+                    "body-sm": [
+                            "Inter"
+                    ],
+                    "headline-md": [
+                            "Geist"
+                    ],
+                    "body-md": [
+                            "Inter"
+                    ],
+                    "headline-lg-mobile": [
+                            "Geist"
+                    ],
+                    "body-lg": [
+                            "Inter"
+                    ]
+            },
+            "fontSize": {
+                    "label-md": [
+                            "14px",
+                            {
+                                    "lineHeight": "1.2",
+                                    "letterSpacing": "0.01em",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "display-lg": [
+                            "48px",
+                            {
+                                    "lineHeight": "1.1",
+                                    "letterSpacing": "-0.04em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "headline-lg": [
+                            "32px",
+                            {
+                                    "lineHeight": "1.2",
+                                    "letterSpacing": "-0.02em",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "label-sm": [
+                            "12px",
+                            {
+                                    "lineHeight": "1.2",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "body-sm": [
+                            "13px",
+                            {
+                                    "lineHeight": "1.5",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "headline-md": [
+                            "20px",
+                            {
+                                    "lineHeight": "1.4",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "body-md": [
+                            "15px",
+                            {
+                                    "lineHeight": "1.5",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "headline-lg-mobile": [
+                            "24px",
+                            {
+                                    "lineHeight": "1.2",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "body-lg": [
+                            "18px",
+                            {
+                                    "lineHeight": "1.6",
+                                    "fontWeight": "400"
+                            }
+                    ]
+            }
+    },
+        },
+      }
+    </script>
+<style>
+        .glass-panel {
+            background-color: rgba(255, 255, 255, 0.65);
+            backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.03);
+        }
+        .glass-panel:hover {
+            background-color: rgba(255, 255, 255, 0.75);
+            border-color: rgba(255, 255, 255, 0.6);
+            transition: all 0.3s ease;
+        }
+        
+        /* Subtle custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0,0,0,0.1);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen font-body-md overflow-x-hidden flex">
+<!-- SideNavBar (Shared Component) -->
+<nav class="hidden md:flex flex-col p-md bg-white/65 dark:bg-white/10 backdrop-blur-[30px] border-r border-white/40 shadow-[0_10px_40px_rgba(0,0,0,0.03)] fixed left-0 top-0 h-full w-[280px] z-50">
+<div class="flex items-center gap-md mb-xl px-sm">
+<div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-on-primary font-bold">
+<span class="material-symbols-outlined">restaurant</span>
+</div>
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim tracking-tight">Spendly</h1>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Premium Management</p>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto pr-sm">
+<ul class="space-y-sm">
+<!-- Dashboard -->
+<li class="">
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-white/75 dark:hover:bg-white/20 transition-all duration-300 font-label-md text-label-md group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">dashboard</span>
+                        Dashboard
+                    </a>
+</li>
+<!-- Tiffin (Active) -->
+<li class="">
+<a class="flex items-center gap-md px-md py-sm rounded-lg bg-primary/10 text-primary border-l-[3px] border-primary font-label-md text-label-md scale-[0.98] transition-transform" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">restaurant</span>
+                        Tiffin
+                    </a>
+</li>
+<!-- Daily Expenses -->
+<li class="">
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-white/75 dark:hover:bg-white/20 transition-all duration-300 font-label-md text-label-md group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">receipt_long</span>
+                        Daily Expenses
+                    </a>
+</li>
+<!-- Payments -->
+<li class="">
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-white/75 dark:hover:bg-white/20 transition-all duration-300 font-label-md text-label-md group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">payments</span>
+                        Payments
+                    </a>
+</li>
+<!-- History -->
+<li class="">
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-white/75 dark:hover:bg-white/20 transition-all duration-300 font-label-md text-label-md group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">history</span>
+                        History
+                    </a>
+</li>
+<!-- Reports -->
+<li class="">
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-white/75 dark:hover:bg-white/20 transition-all duration-300 font-label-md text-label-md group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">analytics</span>
+                        Reports
+                    </a>
+</li>
+<!-- Admin -->
+<li class="">
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-white/75 dark:hover:bg-white/20 transition-all duration-300 font-label-md text-label-md group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">admin_panel_settings</span>
+                        Admin
+                    </a>
+</li>
+<!-- Settings -->
+<li class="">
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-white/75 dark:hover:bg-white/20 transition-all duration-300 font-label-md text-label-md group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">settings</span>
+                        Settings
+                    </a>
+</li>
+</ul>
+<div class="mt-xl pt-lg border-t border-outline-variant/30">
+<p class="font-label-sm text-label-sm text-outline px-sm mb-sm uppercase tracking-wider">Fixed Costs</p>
+<ul class="space-y-sm">
+<li class="">
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-white/75 dark:hover:bg-white/20 transition-all duration-300 font-label-md text-label-md group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">bed</span>
+                            Rent
+                        </a>
+</li>
+<li class="">
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-white/75 dark:hover:bg-white/20 transition-all duration-300 font-label-md text-label-md group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">bolt</span>
+                            Power
+                        </a>
+</li>
+<li class="">
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-white/75 dark:hover:bg-white/20 transition-all duration-300 font-label-md text-label-md group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">local_laundry_service</span>
+                            Laundry
+                        </a>
+</li>
+</ul>
+</div>
+</div>
+<div class="mt-auto pt-md">
+<button class="w-full bg-primary hover:bg-primary-fixed-variant text-on-primary py-sm px-md rounded-lg font-label-md text-label-md shadow-sm transition-colors flex items-center justify-center gap-sm">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                Record Meal
+            </button>
+</div>
+</nav>
+<!-- Main Content Wrapper -->
+<div class="flex-1 flex flex-col md:ml-[280px] w-full min-h-screen">
+<!-- TopNavBar (Shared Component) -->
+<header class="flex justify-between items-center px-lg w-full h-16 bg-white/65 dark:bg-white/10 backdrop-blur-[30px] sticky top-0 z-40 border-b-0">
+<div class="flex items-center gap-sm font-body-sm text-body-sm text-on-surface-variant">
+<span class="hover:text-primary cursor-pointer transition-colors">Spendly</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<span class="text-primary font-bold">Tiffin Tracker</span>
+</div>
+<div class="flex items-center gap-md">
+<button class="text-on-surface-variant hover:text-primary hover:opacity-80 transition-opacity">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary hover:opacity-80 transition-opacity">
+<span class="material-symbols-outlined">apps</span>
+</button>
+<img alt="User Avatar" class="w-8 h-8 rounded-full border border-outline-variant object-cover cursor-pointer hover:scale-95 transition-transform" data-alt="A small circular avatar image of a professional user in a high-key bright setting, reflecting a modern 2026 startup aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCAmMeqT1I0ahvUYyofYfNqFRCEqFXYDoDo760FjwVzKBin9dDvhpv64YsE9txGZZ4lxpOritFezTtZxr1ixgB570o2-7NbdIE6Y1Y-M0KdzIyKrpJPN43VsEM9dgBhNKrym_SSBwwchHqOQRY9sAvjob6KXyKaR3XlUXhFIdvjqX-lKJxTJD5ZWFLJ37wkoOw7yXwLJGkGzkeW77boM52ty5DUJNVtH5MG5pb6HsQGc8wHwhm1jHLQ">
+</div>
+</header>
+<!-- Page Content -->
+<main class="flex-1 p-lg md:p-xl max-w-container-max mx-auto w-full flex flex-col lg:flex-row gap-xl">
+<!-- Left Column: Calendar -->
+<div class="flex-1 flex flex-col gap-lg">
+<!-- Header Controls -->
+<div class="flex justify-between items-center glass-panel rounded-xl px-lg py-md">
+<h2 class="font-headline-lg text-headline-lg text-on-surface">October 2026</h2>
+<div class="flex items-center gap-sm">
+<button class="p-sm rounded-lg hover:bg-primary/5 text-on-surface-variant hover:text-primary transition-colors flex items-center justify-center">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<button class="px-md py-sm rounded-lg hover:bg-primary/5 font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors">
+                            Today
+                        </button>
+<button class="p-sm rounded-lg hover:bg-primary/5 text-on-surface-variant hover:text-primary transition-colors flex items-center justify-center">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</div>
+<!-- Calendar Grid -->
+<div class="glass-panel rounded-xl p-lg flex flex-col h-full">
+<!-- Days Header -->
+<div class="grid grid-cols-7 gap-sm mb-md">
+<div class="text-center font-label-sm text-label-sm text-outline uppercase tracking-wider">Sun</div>
+<div class="text-center font-label-sm text-label-sm text-outline uppercase tracking-wider">Mon</div>
+<div class="text-center font-label-sm text-label-sm text-outline uppercase tracking-wider">Tue</div>
+<div class="text-center font-label-sm text-label-sm text-outline uppercase tracking-wider">Wed</div>
+<div class="text-center font-label-sm text-label-sm text-outline uppercase tracking-wider">Thu</div>
+<div class="text-center font-label-sm text-label-sm text-outline uppercase tracking-wider">Fri</div>
+<div class="text-center font-label-sm text-label-sm text-outline uppercase tracking-wider">Sat</div>
+</div>
+<!-- Grid Cells -->
+<div class="grid grid-cols-7 gap-sm flex-1 auto-rows-fr">
+<!-- Empty Day (Previous Month) -->
+<div class="rounded-lg p-sm min-h-[120px] opacity-30 flex flex-col">
+<span class="font-label-md text-label-md text-on-surface-variant ml-xs mt-xs">27</span>
+</div>
+<div class="rounded-lg p-sm min-h-[120px] opacity-30 flex flex-col">
+<span class="font-label-md text-label-md text-on-surface-variant ml-xs mt-xs">28</span>
+</div>
+<div class="rounded-lg p-sm min-h-[120px] opacity-30 flex flex-col">
+<span class="font-label-md text-label-md text-on-surface-variant ml-xs mt-xs">29</span>
+</div>
+<div class="rounded-lg p-sm min-h-[120px] opacity-30 flex flex-col">
+<span class="font-label-md text-label-md text-on-surface-variant ml-xs mt-xs">30</span>
+</div>
+<!-- Active Day 1: Completed -->
+<div class="rounded-lg p-xs md:p-sm min-h-[120px] bg-white border border-outline-variant/20 hover:border-primary/30 transition-colors flex flex-col group relative">
+<div class="flex justify-between items-start mb-sm">
+<span class="font-label-md text-label-md text-on-surface ml-xs mt-xs">1</span>
+<span class="w-2 h-2 rounded-full bg-secondary-fixed-dim mt-2 mr-1" title="Completed"></span>
+</div>
+<div class="mt-auto flex flex-col gap-xs">
+<div class="bg-surface-container rounded px-2 py-1 flex items-center justify-between cursor-pointer hover:bg-surface-container-high transition-colors text-[11px] font-medium text-on-surface-variant">
+<span class="">L</span>
+<span class="text-secondary">Full</span>
+</div>
+<div class="bg-surface-container rounded px-2 py-1 flex items-center justify-between cursor-pointer hover:bg-surface-container-high transition-colors text-[11px] font-medium text-on-surface-variant">
+<span class="">D</span>
+<span class="text-secondary">Full</span>
+</div>
+</div>
+</div>
+<!-- Active Day 2: Partial -->
+<div class="rounded-lg p-xs md:p-sm min-h-[120px] bg-white border border-outline-variant/20 hover:border-primary/30 transition-colors flex flex-col group relative">
+<div class="flex justify-between items-start mb-sm">
+<span class="font-label-md text-label-md text-on-surface ml-xs mt-xs">2</span>
+<span class="w-2 h-2 rounded-full bg-tertiary-fixed-dim mt-2 mr-1" title="Partial"></span>
+</div>
+<div class="mt-auto flex flex-col gap-xs">
+<div class="bg-surface-container rounded px-2 py-1 flex items-center justify-between cursor-pointer hover:bg-surface-container-high transition-colors text-[11px] font-medium text-on-surface-variant">
+<span class="">L</span>
+<span class="text-outline">Skip</span>
+</div>
+<div class="bg-surface-container rounded px-2 py-1 flex items-center justify-between cursor-pointer hover:bg-surface-container-high transition-colors text-[11px] font-medium text-on-surface-variant">
+<span class="">D</span>
+<span class="text-tertiary">Half</span>
+</div>
+</div>
+</div>
+<!-- Active Day 3: Missing -->
+<div class="rounded-lg p-xs md:p-sm min-h-[120px] bg-white border border-outline-variant/20 hover:border-primary/30 transition-colors flex flex-col group relative">
+<div class="flex justify-between items-start mb-sm">
+<span class="font-label-md text-label-md text-on-surface ml-xs mt-xs">3</span>
+<span class="w-2 h-2 rounded-full bg-error/50 mt-2 mr-1" title="Missing Info"></span>
+</div>
+<div class="mt-auto flex flex-col gap-xs">
+<button class="w-full text-center py-1 border border-dashed border-outline-variant rounded text-[11px] text-outline hover:border-primary hover:text-primary transition-colors">
+                                    + Add Meal
+                                </button>
+</div>
+</div>
+<!-- Day 4: Today (Highlighted) -->
+<div class="rounded-lg p-xs md:p-sm min-h-[120px] bg-primary/5 border border-primary shadow-[0_0_15px_rgba(70,72,212,0.15)] flex flex-col group relative">
+<div class="flex justify-between items-start mb-sm">
+<span class="font-label-md text-label-md text-primary font-bold ml-xs mt-xs">4</span>
+<span class="text-[10px] uppercase font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full mt-1 mr-1">Today</span>
+</div>
+<div class="mt-auto flex flex-col gap-xs">
+<!-- Interactive Toggles for Today -->
+<div class="bg-white rounded p-1 border border-primary/20 flex flex-col gap-1">
+<span class="text-[10px] font-semibold text-on-surface-variant px-1">Lunch</span>
+<div class="flex gap-1">
+<button class="flex-1 bg-surface-container hover:bg-primary hover:text-white text-[10px] py-1 rounded transition-colors text-on-surface">F</button>
+<button class="flex-1 bg-primary text-white text-[10px] py-1 rounded transition-colors shadow-sm">H</button>
+<button class="flex-1 bg-surface-container hover:bg-outline hover:text-white text-[10px] py-1 rounded transition-colors text-on-surface">S</button>
+</div>
+</div>
+<div class="bg-white rounded p-1 border border-primary/20 flex flex-col gap-1">
+<span class="text-[10px] font-semibold text-on-surface-variant px-1">Dinner</span>
+<div class="flex gap-1">
+<button class="flex-1 bg-primary text-white text-[10px] py-1 rounded transition-colors shadow-sm">F</button>
+<button class="flex-1 bg-surface-container hover:bg-primary hover:text-white text-[10px] py-1 rounded transition-colors text-on-surface">H</button>
+<button class="flex-1 bg-surface-container hover:bg-outline hover:text-white text-[10px] py-1 rounded transition-colors text-on-surface">S</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Future Days (Simplified for brevity) -->
+<script>
+                            for(let i=5; i<=31; i++) {
+                                document.write(`
+                                <div class="rounded-lg p-xs md:p-sm min-h-[120px] bg-white border border-outline-variant/20 hover:border-primary/30 transition-colors flex flex-col group opacity-60">
+                                     <span class="font-label-md text-label-md text-on-surface ml-xs mt-xs">${i}</span>
+                                </div>
+                                `);
+                            }
+                        </script>
+                                <div class="rounded-lg p-xs md:p-sm min-h-[120px] bg-white border border-outline-variant/20 hover:border-primary/30 transition-colors flex flex-col group opacity-60">
+                                     <span class="font-label-md text-label-md text-on-surface ml-xs mt-xs">5</span>
+                                </div>
+                                
+                                <div class="rounded-lg p-xs md:p-sm min-h-[120px] bg-white border border-outline-variant/20 hover:border-primary/30 transition-colors flex flex-col group opacity-60">
+                                     <span class="font-label-md text-label-md text-on-surface ml-xs mt-xs">6</span>
+                                </div>
+                                
+                                <div class="rounded-lg p-xs md:p-sm min-h-[120px] bg-white border border-outline-variant/20 hover:border-primary/30 transition-colors flex flex-col group opacity-60">
+                                     <span class="font-label-md text-label-md text-on-surface ml-xs mt-xs">7</span>
+                                </div>
+                                
+                                <div class="rounded-lg p-xs md:p-sm min-h-[120px] bg-white border border-outline-variant/20 hover:border-primary/30 transition-colors flex flex-col group opacity-60">
+                                     <span class="font-label-md text-label-md text-on-surface ml-xs mt-xs">8</span>
+                                </div>
+                                
+                                <div class="rounded-lg p-xs md:p-sm min-h-[120px] bg-white border border-outline-variant/20 hover:border-primary/30 transition-colors flex flex-col group opacity-60">
+                                     <span class="font-label-md text-label-md text-on-surface ml-xs mt-xs">9</span>
+                                </div>
+                                
+                                <div class="rounded-lg p-xs md:p-sm min-h-[120px] bg-white border border-outline-variant/20 hover:border-primary/30 transition-colors flex flex-col group opacity-60">
+                                     <span class="font-label-md text-label-md text-on-surface ml-xs mt-xs">10</span>
+                                </div>
+                                
+                                <div class="rounded-lg p-xs md:p-sm min-h-[120px] bg-white border border-outline-variant/20 hover:border-primary/30 transition-colors flex flex-col group opacity-60">
+                                     <span class="font-label-md text-label-md text-on-surface ml-xs mt-xs">11</span>
+                                </div>
+                                
+                                <div class="rounded-lg p-xs md:p-sm min-h-[120px] bg-white border border-outline-variant/20 hover:border-primary/30 transition-colors flex flex-col group opacity-60">
+                                     <span class="font-label-md text-label-md text-on-surface ml-xs mt-xs">12</span>
+                                </div>
+                                
+                                <div class="rounded-lg p-xs md:p-sm min-h-[120px] bg-white border border-outline-variant/20 hover:border-primary/30 transition-colors flex flex-col group opacity-60">
+                                     <span class="font-label-md text-label-md text-on-surface ml-xs mt-xs">13</span>
+                                </div>
+                                
+                                <div class="rounded-lg p-xs md:p-sm min-h-[120px] bg-white border border-outline-variant/20 hover:border-primary/30 transition-colors flex flex-col group opacity-60">
+                                     <span class="font-label-md text-label-md text-on-surface ml-xs mt-xs">14</span>
+                                </div>
+                                
+                                <div class="rounded-lg p-xs md:p-sm min-h-[120px] bg-white border border-outline-variant/20 hover:border-primary/30 transition-colors flex flex-col group opacity-60">
+                                     <span class="font-label-md text-label-md text-on-surface ml-xs mt-xs">15</span>
+                                </div>
+                                
+                                <div class="rounded-lg p-xs md:p-sm min-h-[120px] bg-white border border-outline-variant/20 hover:border-primary/30 transition-colors flex flex-col group opacity-60">
+                                     <span class="font-label-md text-label-md text-on-surface ml-xs mt-xs">16</span>
+                                </div>
+                                
+                                <div class="rounded-lg p-xs md:p-sm min-h-[120px] bg-white border border-outline-variant/20 hover:border-primary/30 transition-colors flex flex-col group opacity-60">
+                                     <span class="font-label-md text-label-md text-on-surface ml-xs mt-xs">17</span>
+                                </div>
+                                
+                                <div class="rounded-lg p-xs md:p-sm min-h-[120px] bg-white border border-outline-variant/20 hover:border-primary/30 transition-colors flex flex-col group opacity-60">
+                                     <span class="font-label-md text-label-md text-on-surface ml-xs mt-xs">18</span>
+                                </div>
+                                
+                                <div class="rounded-lg p-xs md:p-sm min-h-[120px] bg-white border border-outline-variant/20 hover:border-primary/30 transition-colors flex flex-col group opacity-60">
+                                     <span class="font-label-md text-label-md text-on-surface ml-xs mt-xs">19</span>
+                                </div>
+                                
+                                <div class="rounded-lg p-xs md:p-sm min-h-[120px] bg-white border border-outline-variant/20 hover:border-primary/30 transition-colors flex flex-col group opacity-60">
+                                     <span class="font-label-md text-label-md text-on-surface ml-xs mt-xs">20</span>
+                                </div>
+                                
+                                <div class="rounded-lg p-xs md:p-sm min-h-[120px] bg-white border border-outline-variant/20 hover:border-primary/30 transition-colors flex flex-col group opacity-60">
+                                     <span class="font-label-md text-label-md text-on-surface ml-xs mt-xs">21</span>
+                                </div>
+                                
+                                <div class="rounded-lg p-xs md:p-sm min-h-[120px] bg-white border border-outline-variant/20 hover:border-primary/30 transition-colors flex flex-col group opacity-60">
+                                     <span class="font-label-md text-label-md text-on-surface ml-xs mt-xs">22</span>
+                                </div>
+                                
+                                <div class="rounded-lg p-xs md:p-sm min-h-[120px] bg-white border border-outline-variant/20 hover:border-primary/30 transition-colors flex flex-col group opacity-60">
+                                     <span class="font-label-md text-label-md text-on-surface ml-xs mt-xs">23</span>
+                                </div>
+                                
+                                <div class="rounded-lg p-xs md:p-sm min-h-[120px] bg-white border border-outline-variant/20 hover:border-primary/30 transition-colors flex flex-col group opacity-60">
+                                     <span class="font-label-md text-label-md text-on-surface ml-xs mt-xs">24</span>
+                                </div>
+                                
+                                <div class="rounded-lg p-xs md:p-sm min-h-[120px] bg-white border border-outline-variant/20 hover:border-primary/30 transition-colors flex flex-col group opacity-60">
+                                     <span class="font-label-md text-label-md text-on-surface ml-xs mt-xs">25</span>
+                                </div>
+                                
+                                <div class="rounded-lg p-xs md:p-sm min-h-[120px] bg-white border border-outline-variant/20 hover:border-primary/30 transition-colors flex flex-col group opacity-60">
+                                     <span class="font-label-md text-label-md text-on-surface ml-xs mt-xs">26</span>
+                                </div>
+                                
+                                <div class="rounded-lg p-xs md:p-sm min-h-[120px] bg-white border border-outline-variant/20 hover:border-primary/30 transition-colors flex flex-col group opacity-60">
+                                     <span class="font-label-md text-label-md text-on-surface ml-xs mt-xs">27</span>
+                                </div>
+                                
+                                <div class="rounded-lg p-xs md:p-sm min-h-[120px] bg-white border border-outline-variant/20 hover:border-primary/30 transition-colors flex flex-col group opacity-60">
+                                     <span class="font-label-md text-label-md text-on-surface ml-xs mt-xs">28</span>
+                                </div>
+                                
+                                <div class="rounded-lg p-xs md:p-sm min-h-[120px] bg-white border border-outline-variant/20 hover:border-primary/30 transition-colors flex flex-col group opacity-60">
+                                     <span class="font-label-md text-label-md text-on-surface ml-xs mt-xs">29</span>
+                                </div>
+                                
+                                <div class="rounded-lg p-xs md:p-sm min-h-[120px] bg-white border border-outline-variant/20 hover:border-primary/30 transition-colors flex flex-col group opacity-60">
+                                     <span class="font-label-md text-label-md text-on-surface ml-xs mt-xs">30</span>
+                                </div>
+                                
+                                <div class="rounded-lg p-xs md:p-sm min-h-[120px] bg-white border border-outline-variant/20 hover:border-primary/30 transition-colors flex flex-col group opacity-60">
+                                     <span class="font-label-md text-label-md text-on-surface ml-xs mt-xs">31</span>
+                                </div>
+                                
+<!-- Trailing empty cells -->
+<div class="rounded-lg p-sm min-h-[120px] opacity-30 flex flex-col"><span class="font-label-md text-label-md text-on-surface-variant ml-xs mt-xs">1</span></div>
+<div class="rounded-lg p-sm min-h-[120px] opacity-30 flex flex-col"><span class="font-label-md text-label-md text-on-surface-variant ml-xs mt-xs">2</span></div>
+</div>
+</div>
+</div>
+<!-- Right Column: Summary Sidebar -->
+<div class="w-full lg:w-80 flex flex-col gap-lg">
+<!-- Quick Stats Bento -->
+<div class="glass-panel rounded-xl p-lg flex flex-col gap-md">
+<h3 class="font-headline-md text-headline-md text-on-surface">Current Run Rate</h3>
+<div class="bg-surface-container rounded-lg p-md">
+<p class="font-label-sm text-label-sm text-on-surface-variant mb-1">Predicted Cost</p>
+<div class="flex items-baseline gap-2">
+<span class="font-display-lg text-display-lg text-on-surface tracking-tighter">₹420</span>
+<span class="font-body-sm text-body-sm text-outline">/mo</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-sm">
+<div class="bg-surface rounded-lg p-sm border border-outline-variant/30 flex flex-col">
+<p class="font-label-sm text-label-sm text-on-surface-variant mb-1">Full Meals</p>
+<span class="font-headline-md text-headline-md text-secondary">24</span>
+</div>
+<div class="bg-surface rounded-lg p-sm border border-outline-variant/30 flex flex-col">
+<p class="font-label-sm text-label-sm text-on-surface-variant mb-1">Half Meals</p>
+<span class="font-headline-md text-headline-md text-tertiary">8</span>
+</div>
+</div>
+</div>
+<!-- Legend -->
+<div class="glass-panel rounded-xl p-lg">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-md">Legend</h3>
+<ul class="space-y-3 font-body-sm text-body-sm text-on-surface-variant">
+<li class="flex items-center gap-3">
+<span class="w-3 h-3 rounded-full bg-secondary-fixed-dim"></span>
+                            Completed (Both logged)
+                        </li>
+<li class="flex items-center gap-3">
+<span class="w-3 h-3 rounded-full bg-tertiary-fixed-dim"></span>
+                            Partial (Mixed or Skipped)
+                        </li>
+<li class="flex items-center gap-3">
+<span class="w-3 h-3 rounded-full bg-error/50"></span>
+                            Missing Info
+                        </li>
+<li class="flex items-center gap-3 mt-4 pt-4 border-t border-outline-variant/30">
+<div class="flex gap-1">
+<span class="bg-surface-container px-2 py-0.5 rounded text-[10px] font-medium border border-outline-variant/20">F = Full</span>
+<span class="bg-surface-container px-2 py-0.5 rounded text-[10px] font-medium border border-outline-variant/20">H = Half</span>
+<span class="bg-surface-container px-2 py-0.5 rounded text-[10px] font-medium border border-outline-variant/20">S = Skip</span>
+</div>
+</li>
+</ul>
+</div>
+<!-- Settings Shortcut -->
+<button class="glass-panel rounded-xl p-md flex items-center justify-between group hover:border-primary/50 cursor-pointer text-left">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+<span class="material-symbols-outlined">settings_suggest</span>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface">Meal Rates</p>
+<p class="font-body-sm text-body-sm text-outline">Configure F/H pricing</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors">chevron_right</span>
+</button>
+</div>
+</main>
+</div>
+
+
+</body></html>

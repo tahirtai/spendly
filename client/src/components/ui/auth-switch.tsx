@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/useAuthStore";
 import { api, ApiError } from "@/lib/api";
 import { LoginSchema, RegisterSchema } from "spendly-shared";
+import { SpendlyLogo } from "../SpendlyLogo";
 
 export interface AuthSwitchProps {
   initialMode?: "login" | "register";
@@ -144,12 +145,12 @@ export const Component: React.FC<AuthSwitchProps> = ({
   return (
     <div
       className={cn(
-        "w-full max-w-4xl mx-auto overflow-hidden bg-white/95 backdrop-blur-md rounded-3xl border border-slate-200/80 shadow-2xl shadow-indigo-500/10 grid grid-cols-1 md:grid-cols-12",
+        "w-full mx-auto overflow-hidden bg-white/90 backdrop-blur-3xl rounded-[2rem] border border-white/90 shadow-[0_25px_70px_-15px_rgba(30,27,75,0.32),0_12px_30px_-5px_rgba(79,70,229,0.22)] grid grid-cols-1",
         className
       )}
     >
       {/* Left / Side Visual Feature Card */}
-      <div className="relative hidden md:flex md:col-span-5 bg-gradient-to-br from-[#1e1b4b] via-[#312e81] to-[#4338ca] p-8 text-white flex-col justify-between overflow-hidden">
+      <div className="relative hidden bg-gradient-to-br from-[#1e1b4b] via-[#312e81] to-[#4338ca] p-8 text-white flex-col justify-between overflow-hidden shadow-inner">
         <div
           className="absolute inset-0 opacity-20 bg-cover bg-center mix-blend-overlay pointer-events-none"
           style={{
@@ -159,10 +160,8 @@ export const Component: React.FC<AuthSwitchProps> = ({
         />
 
         <div className="relative z-10 space-y-4">
-          <div className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center">
-            <Sparkles className="w-5 h-5 text-indigo-200" />
-          </div>
-          <h2 className="font-display text-2xl font-bold tracking-tight text-white">Spendly Platform</h2>
+          <SpendlyLogo variant="icon" size="lg" className="h-12 w-12 drop-shadow-xl" />
+          <h2 className="font-display text-2xl font-bold tracking-tight text-white drop-shadow-sm">Spendly Platform</h2>
           <p className="text-xs text-indigo-200/90 leading-relaxed">
             Smart hostel &amp; PG expense splitting, automated tiffin management, and transparent monthly ledger for roommates.
           </p>
@@ -170,25 +169,29 @@ export const Component: React.FC<AuthSwitchProps> = ({
 
         <div className="relative z-10 space-y-4 border-t border-white/10 pt-6">
           <div className="flex items-center gap-3 text-xs text-indigo-100">
-            <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+            <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0 drop-shadow-xs" />
             <span>Role-based access &amp; instant audit log</span>
           </div>
           <div className="flex items-center gap-3 text-xs text-indigo-100">
-            <CheckCircle2 className="w-4 h-4 text-indigo-300 flex-shrink-0" />
+            <CheckCircle2 className="w-4 h-4 text-indigo-300 flex-shrink-0 drop-shadow-xs" />
             <span>Automated settlement calculations</span>
           </div>
         </div>
       </div>
 
       {/* Main Interactive Form Column */}
-      <div className="md:col-span-7 p-6 sm:p-10 flex flex-col justify-center">
+      <div className="p-5 sm:p-6 flex flex-col justify-center bg-gradient-to-b from-white/95 to-slate-50/90">
+        {/* Spendly Brand Logo Header */}
+        <div className="flex justify-center mb-3">
+          <SpendlyLogo variant="full" size="md" className="h-9 w-auto drop-shadow-xs" />
+        </div>
         {/* Animated Segmented Tab Switcher */}
-        <div className="relative flex p-1 bg-slate-100/80 rounded-2xl mb-6 border border-slate-200/60">
+        <div className="relative flex p-1 bg-slate-100/90 rounded-2xl mb-4 border border-slate-200/80 shadow-[inset_0_2px_4px_rgba(0,0,0,0.06),0_2px_8px_rgba(31,38,135,0.08)]">
           <button
             type="button"
             onClick={() => switchMode("login")}
             className={cn(
-              "relative z-10 flex-1 py-2.5 text-xs font-semibold rounded-xl transition-colors duration-200",
+              "relative z-10 flex-1 py-2 text-xs font-bold rounded-xl transition-colors duration-200",
               mode === "login" ? "text-slate-900" : "text-slate-500 hover:text-slate-700"
             )}
           >
@@ -198,14 +201,14 @@ export const Component: React.FC<AuthSwitchProps> = ({
             type="button"
             onClick={() => switchMode("register")}
             className={cn(
-              "relative z-10 flex-1 py-2.5 text-xs font-semibold rounded-xl transition-colors duration-200",
+              "relative z-10 flex-1 py-2 text-xs font-bold rounded-xl transition-colors duration-200",
               mode === "register" ? "text-slate-900" : "text-slate-500 hover:text-slate-700"
             )}
           >
             Create Account
           </button>
           <motion.div
-            className="absolute inset-y-1 bg-white rounded-xl shadow-sm border border-slate-200/50"
+            className="absolute inset-y-1 bg-white rounded-xl shadow-md shadow-slate-900/15 border border-white"
             initial={false}
             animate={{
               left: mode === "login" ? "4px" : "50%",
@@ -217,7 +220,7 @@ export const Component: React.FC<AuthSwitchProps> = ({
 
         {/* Global Error Banner */}
         {errorMsg && (
-          <div className="mb-4 bg-rose-50 border border-rose-200 text-rose-600 text-xs p-3.5 rounded-xl flex items-center gap-2 animate-in fade-in">
+          <div className="mb-3 bg-rose-50 border border-rose-200 text-rose-600 text-xs p-2.5 rounded-xl flex items-center gap-2 shadow-sm animate-in fade-in">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             <span>{errorMsg}</span>
           </div>
@@ -225,7 +228,7 @@ export const Component: React.FC<AuthSwitchProps> = ({
 
         {/* Global Success Banner */}
         {successMsg && (
-          <div className="mb-4 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs p-3.5 rounded-xl flex items-center gap-2 animate-in fade-in">
+          <div className="mb-3 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs p-2.5 rounded-xl flex items-center gap-2 shadow-sm animate-in fade-in">
             <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
             <span>{successMsg}</span>
           </div>
@@ -241,55 +244,55 @@ export const Component: React.FC<AuthSwitchProps> = ({
               exit={{ opacity: 0, x: 12 }}
               transition={{ duration: 0.2 }}
               onSubmit={handleLogin}
-              className="space-y-4"
+              className="space-y-3"
             >
               <div>
-                <h3 className="text-xl font-bold text-slate-900 mb-1">Welcome back</h3>
-                <p className="text-xs text-slate-500 mb-4">Enter your credentials to access your hostel dashboard</p>
+                <h3 className="text-xl font-bold text-slate-900 mb-0.5 tracking-tight">Welcome Back</h3>
+                <p className="text-xs text-slate-500 mb-2">Enter credentials to access your hostel workspace</p>
               </div>
 
               <div>
                 <label className="text-xs font-semibold text-slate-700 block mb-1">Email Address</label>
                 <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                   <input
                     type="email"
                     placeholder="student@gmail.com"
                     value={loginEmail}
                     onChange={(e) => setLoginEmail(e.target.value)}
                     className={cn(
-                      "w-full bg-slate-50/50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all",
+                      "w-full bg-white border border-slate-200/90 rounded-xl py-2.5 pl-9 pr-3 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm hover:border-indigo-300",
                       fieldErrors.email && "border-rose-400 focus:ring-rose-500/20 focus:border-rose-500"
                     )}
                     required
                   />
                 </div>
-                {fieldErrors.email && <p className="text-rose-500 text-[11px] mt-1">{fieldErrors.email}</p>}
+                {fieldErrors.email && <p className="text-rose-500 text-[11px] mt-0.5">{fieldErrors.email}</p>}
               </div>
 
               <div>
                 <label className="text-xs font-semibold text-slate-700 block mb-1">Password</label>
                 <div className="relative">
-                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                   <input
                     type="password"
                     placeholder="••••••••"
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
                     className={cn(
-                      "w-full bg-slate-50/50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all",
+                      "w-full bg-white border border-slate-200/90 rounded-xl py-2.5 pl-9 pr-3 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm hover:border-indigo-300",
                       fieldErrors.password && "border-rose-400 focus:ring-rose-500/20 focus:border-rose-500"
                     )}
                     required
                   />
                 </div>
-                {fieldErrors.password && <p className="text-rose-500 text-[11px] mt-1">{fieldErrors.password}</p>}
+                {fieldErrors.password && <p className="text-rose-500 text-[11px] mt-0.5">{fieldErrors.password}</p>}
               </div>
 
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-[#4648d4] hover:bg-[#3b3dbb] text-white font-semibold text-xs py-3 rounded-xl shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                className="w-full bg-[#5e5ce6] hover:bg-[#4441cc] text-white font-bold text-xs py-3 rounded-full shadow-lg shadow-indigo-600/30 hover:shadow-indigo-600/45 hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2 transition-all disabled:opacity-50 mt-1"
               >
                 <span>{isLoading ? "Signing In..." : "Sign In to Spendly"}</span>
                 <ArrowRight className="w-4 h-4" />
@@ -303,80 +306,80 @@ export const Component: React.FC<AuthSwitchProps> = ({
               exit={{ opacity: 0, x: -12 }}
               transition={{ duration: 0.2 }}
               onSubmit={handleRegister}
-              className="space-y-4"
+              className="space-y-2.5"
             >
               <div>
-                <h3 className="text-xl font-bold text-slate-900 mb-1">Create Student Account</h3>
-                <p className="text-xs text-slate-500 mb-4">Join your hostel group and track shared expenses easily</p>
+                <h3 className="text-lg font-bold text-slate-900 mb-0.5 tracking-tight">Create Student Account</h3>
+                <p className="text-[11px] text-slate-500 mb-1.5">Track hostel meals &amp; shared bills easily</p>
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">Full Name</label>
+                <label className="text-[11px] font-semibold text-slate-700 block mb-0.5">Full Name</label>
                 <div className="relative">
-                  <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                  <User className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
                   <input
                     type="text"
                     placeholder="Student Name"
                     value={regFullName}
                     onChange={(e) => setRegFullName(e.target.value)}
                     className={cn(
-                      "w-full bg-slate-50/50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all",
+                      "w-full bg-white border border-slate-200/90 rounded-xl py-2 pl-9 pr-3 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm hover:border-indigo-300",
                       fieldErrors.fullName && "border-rose-400"
                     )}
                     required
                   />
                 </div>
-                {fieldErrors.fullName && <p className="text-rose-500 text-[11px] mt-1">{fieldErrors.fullName}</p>}
+                {fieldErrors.fullName && <p className="text-rose-500 text-[10px] mt-0.5">{fieldErrors.fullName}</p>}
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">Email Address</label>
+                <label className="text-[11px] font-semibold text-slate-700 block mb-0.5">Email Address</label>
                 <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                  <Mail className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
                   <input
                     type="email"
                     placeholder="student@gmail.com"
                     value={regEmail}
                     onChange={(e) => setRegEmail(e.target.value)}
                     className={cn(
-                      "w-full bg-slate-50/50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all",
+                      "w-full bg-white border border-slate-200/90 rounded-xl py-2 pl-9 pr-3 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm hover:border-indigo-300",
                       fieldErrors.email && "border-rose-400"
                     )}
                     required
                   />
                 </div>
-                {fieldErrors.email && <p className="text-rose-500 text-[11px] mt-1">{fieldErrors.email}</p>}
+                {fieldErrors.email && <p className="text-rose-500 text-[10px] mt-0.5">{fieldErrors.email}</p>}
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">Password</label>
+                <label className="text-[11px] font-semibold text-slate-700 block mb-0.5">Password</label>
                 <div className="relative">
-                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                  <Lock className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
                   <input
                     type="password"
                     placeholder="Min 6 characters"
                     value={regPassword}
                     onChange={(e) => setRegPassword(e.target.value)}
                     className={cn(
-                      "w-full bg-slate-50/50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all",
+                      "w-full bg-white border border-slate-200/90 rounded-xl py-2 pl-9 pr-3 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm hover:border-indigo-300",
                       fieldErrors.password && "border-rose-400"
                     )}
                     required
                   />
                 </div>
-                {fieldErrors.password && <p className="text-rose-500 text-[11px] mt-1">{fieldErrors.password}</p>}
+                {fieldErrors.password && <p className="text-rose-500 text-[10px] mt-0.5">{fieldErrors.password}</p>}
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">Phone Number</label>
+                <label className="text-[11px] font-semibold text-slate-700 block mb-0.5">Phone Number</label>
                 <div className="relative">
-                  <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                  <Phone className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
                   <input
                     type="tel"
                     placeholder="+91 98765 43210"
                     value={regPhone}
                     onChange={(e) => setRegPhone(e.target.value)}
-                    className="w-full bg-slate-50/50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                    className="w-full bg-white border border-slate-200/90 rounded-xl py-2 pl-9 pr-3 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm hover:border-indigo-300"
                   />
                 </div>
               </div>
@@ -384,7 +387,7 @@ export const Component: React.FC<AuthSwitchProps> = ({
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-[#4648d4] hover:bg-[#3b3dbb] text-white font-semibold text-xs py-3 rounded-xl shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                className="w-full bg-[#5e5ce6] hover:bg-[#4441cc] text-white font-bold text-xs py-2.5 rounded-full shadow-lg shadow-indigo-600/30 hover:shadow-indigo-600/45 hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2 transition-all disabled:opacity-50 mt-1.5"
               >
                 <span>{isLoading ? "Registering..." : "Create Account"}</span>
                 <ArrowRight className="w-4 h-4" />

@@ -1,125 +1,114 @@
 # 📋 Spendly — Product Requirements Document (PRD)
 
-**Version:** 1.0 (MVP)  
+**Version:** 1.0 (Final Production Audit)  
 **Product Name:** Spendly  
-**Type:** SaaS-ready Hostel & PG Expense Management Platform  
-**Current Scope:** Tiffin + Daily Expenses  
-**Future Scope:** Complete Hostel Management Platform  
+**Type:** Monorepo SaaS-ready Hostel & PG Expense Management Platform  
+**Status:** Production-Ready & Operational  
 
 ---
 
-## 1. Vision
+## 1. Product Vision & Problem Statement
 
-Spendly is a modern web application designed to help hostel and PG residents effortlessly track recurring expenses, beginning with tiffin and daily expenses. 
+### Vision
+Spendly is a modern monorepo web and mobile-first application built to streamline financial management for hostel residents, PG occupants, and mess managers. It eliminates manual paper registers, disputed mess bills, and untracked expenditures through automated daily tiffin logging, categorized expense management, and admin-verified payment settlements.
 
-The MVP focuses on eliminating manual calculations and payment disputes by automatically calculating totals, maintaining monthly history, and securely storing payment records.
+### Problem Statement
+Hostel and PG residents frequently experience:
+- **Disputed Tiffin Charges**: Unclear logs regarding half meals, full meals, or skipped meals.
+- **Unverified Payments**: Misplaced cash receipts or unverified UPI transactions causing confusion at month-end.
+- **Rigid Historical Records**: Inability to view past monthly breakdowns when meal prices change.
+- **Administrative Overhead**: Mess managers spending hours aggregating paper logs into manual calculations.
 
-The architecture must be modular, scalable, and production-ready so future modules can be added without major refactoring.
-
----
-
-## 2. Goals
-
-### Primary Goals
-* **One-click meal tracking**: Quick logging of daily lunch and dinner meals (Half, Full, Skip).
-* **Automatic monthly calculation**: Real-time aggregation of meal costs based on versioned meal prices.
-* **Daily expense management**: Categorized expense tracking with custom notes and default categories.
-* **Payment tracking & verification**: Cash and UPI payment logging with admin approval workflow.
-* **UPI proof upload**: Secure storage and preview of payment screenshots.
-* **Monthly snapshots & reports**: Immutable end-of-month financial snapshots with PDF/CSV export options.
-* **Admin panel**: User management, payment verification, meal price configuration, and month locking.
-* **Secure authentication**: Role-based access control (Student, Admin, Super Admin) powered by Supabase Auth.
-* **Production-ready architecture**: Scalable multi-workspace support.
+Spendly solves these issues by establishing a centralized digital workspace with instant balance calculations, uploaded payment proof verification, meal price versioning, and immutable monthly snapshots.
 
 ---
 
-## 3. Non-Goals (MVP)
+## 2. Target Users & Personas
 
-The following modules are **explicitly out of scope for the MVP** and will display as "Coming Soon" in the interface:
-* Room Rent
-* Electricity & Water Bills
-* Laundry Services
-* Shared Expenses
-* Visitor Management & Attendance
-* Push Notifications & Mobile App
-* Online Payment Gateway Integration
+1. **Hostel Resident / Student (`STUDENT`)**:
+   - Needs quick daily meal logging (Half/Full/Skip).
+   - Tracks personal daily expenditures (Food, Tea, Travel, Grocery).
+   - Submits payment entries with UPI screenshot proof.
+   - Monitors outstanding balance in real time.
 
----
+2. **Mess Manager / Admin (`ADMIN`)**:
+   - Oversees all student balances within the hostel workspace.
+   - Reviews and approves/rejects pending UPI payment screenshot proofs.
+   - Sets and updates workspace meal prices (Half price, Full price).
+   - Locks past months to freeze snapshot balances.
 
-## 4. User Roles & Permissions
-
-| Role | Key Permissions | Restrictions |
-| :--- | :--- | :--- |
-| **Student** | • Register / Login<br>• Record meals & daily expenses<br>• Upload UPI payment proof<br>• View own monthly reports & history | • Cannot view or modify other users' data<br>• Cannot access Admin Panel |
-| **Admin** | • All Student capabilities<br>• View students in workspace<br>• Verify/Approve payments<br>• Manage workspace meal prices<br>• Lock/Unlock months<br>• Export workspace reports | • Cannot promote users to Admin<br>• Cannot delete workspace |
-| **Super Admin** | • Full system permissions<br>• Promote/Demote Admins<br>• Create & delete users/workspaces<br>• Manage workspace pricing & settings | • Registration *never* exposes Admin option (All signups default to Student) |
+3. **Hostel Super Admin (`SUPER_ADMIN`)**:
+   - Manages role assignments (`STUDENT` <-> `ADMIN` <-> `SUPER_ADMIN`).
+   - Maintains system integrity across workspaces.
 
 ---
 
-## 5. Product Modules & Screen Mappings
+## 3. Currently Implemented Features vs. Future Scope
 
-Every module corresponds to a pixel-perfect design template created in `stitch_designs/`:
+### CURRENTLY IMPLEMENTED
 
-### 5.1 Dashboard Module
-* **UI Design Reference**: [stitch_designs/01_Dashboard_Spendly.html](file:///c:/Users/Taheer/Desktop/Spendly/stitch_designs/01_Dashboard_Spendly.html)
-* **Summary Cards**: Current Month Total, Remaining Balance, Meals This Month, Daily Expenses, Total Payments, Missing Entries.
-* **Quick Actions**: Record Meal, Add Expense, Add Payment.
-
-### 5.2 Tiffin Module
-* **UI Design Reference**: [stitch_designs/07_Tiffin_Tracking_Spendly.html](file:///c:/Users/Taheer/Desktop/Spendly/stitch_designs/07_Tiffin_Tracking_Spendly.html)
-* **Features**:
-  * Automatic today's date selection.
-  * Lunch options: Half, Full, Skip.
-  * Dinner options: Half, Full, Skip.
-  * Missing Entries calendar modal to catch up on unrecorded past days in unlocked months.
-  * Versioned workspace meal prices (Half Price, Full Price). Updates affect only future records.
-
-### 5.3 Daily Expense Module
-* **UI Design Reference**: [stitch_designs/04_Daily_Expenses_Spendly.html](file:///c:/Users/Taheer/Desktop/Spendly/stitch_designs/04_Daily_Expenses_Spendly.html)
-* **Features**:
-  * Fields: Category, Amount, Note, Date.
-  * Default Categories: Food, Tea, Snacks, Grocery, Laundry, Travel, Medical, Shopping, Other.
-
-### 5.4 Payments Module
-* **UI Design Reference**: [stitch_designs/12_Payments_Spendly.html](file:///c:/Users/Taheer/Desktop/Spendly/stitch_designs/12_Payments_Spendly.html)
-* **Features**:
-  * Payment Types: Cash vs. UPI.
-  * UPI includes screenshot upload, transaction note, date, and verification status (`Pending`, `Approved`, `Rejected`).
-  * Approved payments immediately reduce the user's remaining balance.
-
-### 5.5 Monthly Snapshot & Reports Module
-* **UI Design References**: 
-  * [stitch_designs/09_Monthly_History_Spendly.html](file:///c:/Users/Taheer/Desktop/Spendly/stitch_designs/09_Monthly_History_Spendly.html)
-  * [stitch_designs/06_Reports_Analytics_Spendly.html](file:///c:/Users/Taheer/Desktop/Spendly/stitch_designs/06_Reports_Analytics_Spendly.html)
-* **Features**:
-  * Immutable snapshot generated at month-end containing totals, expenses, payments, remaining balance, and status.
-  * Export options: Download PDF, Export CSV.
-
-### 5.6 Admin Panel Module
-* **UI Design Reference**: [stitch_designs/08_Admin_Dashboard_Spendly.html](file:///c:/Users/Taheer/Desktop/Spendly/stitch_designs/08_Admin_Dashboard_Spendly.html)
-* **Features**: Student management, payment verification, meal price configuration, report exports, and month lock controls.
+- [x] **Supabase Authentication**: Registration & login via JWT bearer tokens.
+- [x] **Workspace Isolation**: Default `SPENDLY_HOSTEL` workspace mapping members and financial records.
+- [x] **One-Click Tiffin Logging**: Log daily lunch & dinner (`HALF`, `FULL`, `SKIP`) with automated cost computation.
+- [x] **Missing Entry Alerts & Calendar**: Highlight unrecorded meal days in unlocked months via calendar views.
+- [x] **Categorized Expense Tracker**: Log expenditures under pre-seeded categories (`Food`, `Tea`, `Snacks`, `Grocery`, `Laundry`, `Travel`, `Medical`, `Shopping`, `Other`).
+- [x] **Payment Verification Portal**: Cash & UPI payment submission with direct Supabase Storage screenshot upload (`payment-proofs` bucket).
+- [x] **Signed Payment Proof URLs**: Secure temporary access to uploaded screenshots for admin verification.
+- [x] **Admin Verification Workflow**: Approve or reject pending user payments; approved payments instantly reduce balance due.
+- [x] **Meal Price Management**: Admin configurable `halfPrice` and `fullPrice` with retroactive stability.
+- [x] **Month Locking & Snapshots**: Lock closed months to generate immutable `MonthlySnapshot` records.
+- [x] **Monthly Reports & Analytics**: Interactive spending distribution charts (`Chart.js`) with CSV data export options.
+- [x] **User Profile Management**: Update full name, phone number, and avatar URL.
 
 ---
 
-## 6. Business Rules
+### FUTURE / PLANNED SCOPE
 
-1. **Date Defaulting**: Today's date is selected by default across all forms.
-2. **Month Locking**: Users can edit entries only in unlocked months. Once an Admin locks a month, records become read-only.
-3. **Price Versioning**: Updating meal prices affects only future meal entries; historical records preserve the price active at the time of entry.
-4. **Immediate Balance Settlement**: Approved payments immediately decrement the outstanding balance.
-5. **Immutable Snapshots**: Closed months generate permanent snapshots that cannot be overwritten.
+- [ ] **Multi-Workspace Management UI**: Interface for creating and switching between multiple independent hostels or PG branches.
+- [ ] **Online Payment Gateway Integration**: Automated instant payments via Razorpay / Paytm / Stripe integration.
+- [ ] **WhatsApp & Push Notifications**: Automated automated reminders for unlogged meals and month-end pending dues.
+- [ ] **Automated PDF Statement Export**: Native server-side PDF generation for monthly financial statements.
+- [ ] **Room Rent & Utility Bill Splitting Module**: Module for handling fixed rent, electricity, and water bill distribution.
 
 ---
 
-## 7. Success Criteria
+## 4. Detailed User Journeys
 
-The MVP is complete when a user can:
-1. Register & login securely (default role: Student).
-2. Join/select a workspace.
-3. Record daily meals (Half/Full/Skip) in one click.
-4. Log daily expenses with categories.
-5. Upload UPI payment proof or record cash payments.
-6. View real-time balance calculations & missing entry alerts.
-7. Generate and download monthly PDF/CSV reports.
-8. Browse immutable historical records.
-9. Verify payments and manage residents via the Admin Panel.
+### User Journey 1: Daily Meal & Expense Logging
+1. User logs in to Spendly and lands on the **Dashboard**.
+2. Dashboard displays current month spending total, remaining balance due, meals logged this month, and missing entry alerts.
+3. User navigates to **Tiffin Tracker**, selects today's lunch and dinner options (`Half`, `Full`, or `Skip`), and clicks **Save Meal**.
+4. System calculates total cost based on active `MealPrice` rules and updates current balance.
+5. User navigates to **Expenses**, enters amount, selects category `Tea`, adds an optional note, and submits.
+
+### User Journey 2: Payment Proof Submission & Verification
+1. User makes a UPI payment to hostel manager.
+2. User opens **Payments** page in Spendly, selects payment type `UPI`, enters amount, attaches payment screenshot image, and submits.
+3. Express server validates file (PNG/JPEG/WEBP under 5MB), uploads image to Supabase Storage (`payment-proofs` bucket), and saves payment with status `PENDING`.
+4. Admin opens **Admin Panel -> Payment Verifications**, views pending payment list, and clicks **View Proof** to generate a signed access URL.
+5. Admin verifies receipt accuracy and clicks **Approve**.
+6. Payment status updates to `APPROVED`, automatically subtracting amount from student's balance due.
+
+### User Journey 3: Month Locking & Snapshot Archival
+1. At month-end, Admin opens **Admin Panel -> Month Locking**.
+2. Admin reviews total meals, expenses, and payments for the target month (`YYYY-MM`) and clicks **Lock Month**.
+3. Server aggregates user totals, calculates final `balanceDue`, updates or inserts `MonthlySnapshot` record with `isLocked = true`, and returns success.
+4. Subsequent user attempts to modify meal/expense records for that locked month are rejected with validation errors.
+
+---
+
+## 5. Important Business & Data Validation Rules
+
+1. **Date Format**: All dates are formatted as `YYYY-MM-DD`. Month identifiers are formatted as `YYYY-MM`.
+2. **Meal Price Versioning**: Meal costs stored on the `Meal` record (`lunchCost`, `dinnerCost`, `totalCost`) preserve the pricing active at creation. Updating `MealPrice` does not alter existing records.
+3. **Month Locking Integrity**: Neither users nor admins can insert, update, or delete meals or expenses in a month marked as locked (`isLocked = true`).
+4. **File Upload Restrictions**: Screenshot uploads are strictly limited to images (`image/png`, `image/jpeg`, `image/webp`) with maximum file size of 5 MB.
+5. **Role Security**: Registration defaults to `STUDENT`. Role upgrades to `ADMIN` or `SUPER_ADMIN` can only be performed by a `SUPER_ADMIN` via `/api/admin/members/:id/role`.
+
+---
+
+## 6. Success Metrics
+
+- **Zero Calculation Discrepancies**: Automated backend calculations eliminate manual tallying errors.
+- **Proof Verifiability**: 100% of UPI payments backed by uploaded screenshot proof.
+- **Snapshot Immutability**: Closed month financial statements remain fixed and audit-ready.
