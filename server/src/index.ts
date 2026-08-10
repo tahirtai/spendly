@@ -7,7 +7,7 @@ import { seedDatabase } from './seed.js';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 5000;
 
 // Security hardening
 app.disable('x-powered-by');
@@ -62,7 +62,7 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   res.status(500).json({ error: err.message || 'Internal Server Error' });
 });
 
-app.listen(PORT, async () => {
-  console.log(`🚀 Spendly Server running on http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', async () => {
+  console.log(`🚀 Spendly Server running on port ${PORT}`);
   await seedDatabase();
 });
