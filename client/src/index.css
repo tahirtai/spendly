@@ -1,48 +1,352 @@
-@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Inter:ital,opsz,wght@0,14..32,300..700;1,14..32,300..700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:ital,opsz,wght@0,14..32,300..700;1,14..32,300..700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --spendly-primary: #4441cc;
+    --spendly-primary-bright: #5e5ce6;
+    --spendly-secondary: #8d2ebc;
+    --spendly-surface: #fcf8fb;
+    --spendly-text: #1b1b1d;
+    --spendly-muted: #777586;
+  }
+
   body {
-    @apply bg-[#f8f9ff] text-[#0b1c30] font-sans antialiased min-h-screen selection:bg-primary/20 selection:text-primary;
+    @apply bg-[#ececf4] text-[#1b1b1d] font-sans antialiased min-h-screen selection:bg-primary/20 selection:text-primary;
+    -webkit-tap-highlight-color: transparent;
   }
 }
 
+/* ── Stage & Shell ──────────────────────────────────────────────────────── */
+
+.spendly-stage {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 18% 10%, rgba(94, 92, 230, 0.17), transparent 30%),
+    radial-gradient(circle at 88% 4%, rgba(175, 82, 222, 0.16), transparent 28%),
+    linear-gradient(135deg, #f7f8fc 0%, #eef2ff 52%, #fcf8fb 100%);
+}
+
+.spendly-mobile-shell {
+  width: 100%;
+  max-width: 430px;
+  /* Fixed height = the shell IS the mobile viewport */
+  height: 100vh;
+  height: 100dvh;
+  margin: 0 auto;
+  position: relative;
+  /* overflow:hidden clips the nav when it slides down to hide */
+  overflow: hidden;
+  /* Flex column: header | scroll-content | nav */
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(94, 92, 230, 0.13), transparent 28%),
+    radial-gradient(circle at 100% 18%, rgba(208, 114, 255, 0.14), transparent 26%),
+    linear-gradient(160deg, rgba(252, 248, 251, 0.98), rgba(239, 242, 255, 0.96));
+  box-shadow: 0 0 36px rgba(31, 38, 135, 0.08);
+}
+
+/* ── App Header ─────────────────────────────────────────────────────────── */
+
+.app-header {
+  /* Floating rounded pill header — flex child at top of shell, never scrolls */
+  flex-shrink: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  /* Floating card margins — top accounts for notch/safe-area */
+  margin-top: calc(max(env(safe-area-inset-top), 0px) + 8px);
+  margin-left: 12px;
+  margin-right: 12px;
+  margin-bottom: 6px;
+  padding: 10px 16px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.86);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow:
+    0 8px 28px rgba(31, 38, 135, 0.10),
+    0 2px 8px rgba(31, 38, 135, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.app-header-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 1.5px solid rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.75);
+  box-shadow: 0 4px 12px rgba(70, 68, 212, 0.14);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: all 0.2s ease;
+  padding: 2px;
+}
+
+.app-header-avatar:active {
+  transform: scale(0.93);
+}
+
+/* ── Scrollable Content Area ────────────────────────────────────────────── */
+
+.shell-content {
+  flex: 1 1 0%;
+  min-height: 0; /* critical: allows flex child to shrink below content height */
+  overflow-y: auto;
+  overflow-x: hidden;
+  /* Padding so content can scroll fully above the absolutely-positioned nav.
+     Nav height ≈ pill(~52px) + margin-bottom(8px) + safe-area(≥16px) ≈ 84px. */
+  padding-bottom: 90px;
+}
+
+/* ── Page Layout ────────────────────────────────────────────────────────── */
+
+.mobile-page {
+  @apply px-5 pt-5 pb-6 space-y-6;
+}
+
+.mobile-page > .border-b,
+.mobile-header {
+  @apply border-0 pb-0;
+}
+
+.mobile-header-card {
+  @apply flex flex-col gap-2;
+}
+
+.mobile-title {
+  @apply font-display text-2xl font-extrabold tracking-normal text-[#1b1b1d] leading-tight;
+}
+
+.mobile-subtitle {
+  @apply text-sm text-[#777586] leading-relaxed;
+}
+
+/* ── Cards ──────────────────────────────────────────────────────────────── */
+
 .stitch-card {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 2px 12px 0 rgba(70, 72, 212, 0.04);
-  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  box-shadow: 0 10px 30px rgba(31, 38, 135, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  border-radius: 1.5rem;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .stitch-card-hover:hover {
-  transform: translateY(-2px);
-  border-color: rgba(70, 72, 212, 0.25);
-  box-shadow: 0 12px 30px -4px rgba(70, 72, 212, 0.12);
+  transform: translateY(-1px);
+  border-color: rgba(94, 92, 230, 0.26);
+  box-shadow: 0 14px 36px rgba(94, 92, 230, 0.14);
 }
 
 .glass-card-light {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  box-shadow: 0 4px 20px -2px rgba(11, 28, 48, 0.05);
+  background: rgba(255, 255, 255, 0.76);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  box-shadow: 0 12px 34px rgba(31, 38, 135, 0.08);
 }
 
+/* ── Buttons ────────────────────────────────────────────────────────────── */
+
 .btn-primary {
-  @apply bg-[#4648d4] hover:bg-[#393ab3] text-white font-medium px-4 py-2.5 rounded-xl shadow-md shadow-[#4648d4]/20 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm;
+  @apply bg-[#5e5ce6] hover:bg-[#4441cc] text-white font-bold px-4 py-3 rounded-full shadow-lg shadow-[#5e5ce6]/25 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm;
 }
 
 .btn-secondary {
-  @apply bg-[#eff4ff] hover:bg-[#e5eeff] text-[#4648d4] border border-[#d3e4fe] font-medium px-4 py-2.5 rounded-xl transition-all active:scale-[0.98] flex items-center justify-center gap-2 text-sm;
+  @apply bg-white/80 hover:bg-white text-[#4441cc] border border-white/70 font-bold px-4 py-3 rounded-full transition-all active:scale-[0.98] flex items-center justify-center gap-2 text-sm shadow-sm;
 }
 
 .btn-danger {
-  @apply bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 font-medium px-4 py-2.5 rounded-xl transition-all active:scale-[0.98] flex items-center justify-center gap-2 text-sm;
+  @apply bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 font-bold px-4 py-3 rounded-full transition-all active:scale-[0.98] flex items-center justify-center gap-2 text-sm;
 }
 
+/* ── Form ───────────────────────────────────────────────────────────────── */
+
 .input-field {
-  @apply bg-white border border-slate-200 focus:border-[#4648d4] focus:ring-2 focus:ring-[#4648d4]/15 text-[#0b1c30] rounded-xl px-4 py-2.5 text-sm transition-all outline-none placeholder:text-slate-400 w-full;
+  @apply bg-white/75 border border-white/70 focus:border-[#5e5ce6] focus:ring-2 focus:ring-[#5e5ce6]/15 text-[#1b1b1d] rounded-xl px-4 py-3 text-sm transition-all outline-none placeholder:text-slate-400 w-full shadow-sm;
+}
+
+/* ── Bottom Sheet ───────────────────────────────────────────────────────── */
+
+.bottom-sheet {
+  @apply fixed inset-x-0 bottom-0 z-[60] mx-auto w-full max-w-[430px] rounded-t-[2rem] border border-white/80 bg-white/95 shadow-2xl backdrop-blur-2xl transition-transform duration-300;
+  max-height: 88vh;
+  padding-bottom: max(env(safe-area-inset-bottom), 16px);
+}
+
+.bottom-sheet-backdrop {
+  @apply fixed inset-0 z-[55] bg-slate-950/40 backdrop-blur-sm;
+}
+
+/* ── Pill Bottom Navigation ─────────────────────────────────────────────── */
+
+.pill-nav-wrap {
+  /* Absolutely positioned so it NEVER takes up space in the flex layout.
+     The shell (position:relative, overflow:hidden) is the containing block.
+     When translateY slides it down, overflow:hidden clips it cleanly.
+     No empty footer area when hidden. */
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0 14px;
+  padding-bottom: max(env(safe-area-inset-bottom), 10px);
+  /* smooth show/hide via transform */
+  transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.28s ease;
+}
+
+/* Respect reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .pill-nav-wrap {
+    transition: none;
+  }
+}
+
+.pill-nav-visible {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.pill-nav-hidden {
+  transform: translateY(calc(100% + 20px));
+  opacity: 0;
+  pointer-events: none;
+}
+
+.pill-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  width: 100%;
+  max-width: 364px;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  border-radius: 9999px;
+  box-shadow:
+    0 8px 32px rgba(31, 38, 135, 0.14),
+    0 2px 8px rgba(31, 38, 135, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  padding: 5px 8px;
+  margin-bottom: 0;
+}
+
+.pill-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  transition: all 0.18s ease;
+  min-width: 0;
+  flex: 1;
+  cursor: pointer;
+}
+
+.pill-nav-item:active {
+  transform: scale(0.92);
+}
+
+.pill-nav-item-active {
+  color: #4441cc;
+}
+
+.pill-nav-item-inactive {
+  color: #9491a8;
+}
+
+.pill-nav-item-inactive:hover {
+  color: #5e5ce6;
+}
+
+.pill-nav-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 28px;
+  border-radius: 9999px;
+  transition: all 0.18s ease;
+}
+
+.pill-nav-icon-active {
+  background: rgba(68, 65, 204, 0.12);
+}
+
+.pill-nav-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* ── Profile Rows ───────────────────────────────────────────────────────── */
+
+.profile-row {
+  @apply flex items-center gap-3 rounded-2xl border border-white/70 bg-white/75 px-4 py-3.5 shadow-sm backdrop-blur-xl transition-all active:scale-[0.99];
+}
+
+.profile-row-icon {
+  @apply flex h-10 w-10 shrink-0 items-center justify-center rounded-xl;
+}
+
+/* ── Scrollbar Hide ─────────────────────────────────────────────────────── */
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ── Mobile Shell Overrides (collapse responsive breakpoints to single column) */
+
+.spendly-mobile-shell .md\:grid-cols-2,
+.spendly-mobile-shell .lg\:grid-cols-2,
+.spendly-mobile-shell .lg\:grid-cols-3 {
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+.spendly-mobile-shell .sm\:grid-cols-2,
+.spendly-mobile-shell .lg\:grid-cols-4 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.spendly-mobile-shell .md\:flex-row,
+.spendly-mobile-shell .sm\:flex-row {
+  flex-direction: column;
+}
+
+.spendly-mobile-shell .md\:items-center,
+.spendly-mobile-shell .sm\:items-center {
+  align-items: stretch;
+}
+
+.spendly-mobile-shell .lg\:col-span-2,
+.spendly-mobile-shell .lg\:col-span-3,
+.spendly-mobile-shell .md\:col-span-2 {
+  grid-column: auto;
 }

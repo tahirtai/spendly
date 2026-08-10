@@ -58,7 +58,7 @@ export const TiffinView: React.FC = () => {
     if (!user?.id) return;
     try {
       const data = selectedDate === today
-        ? await api.get('/meals/today')
+        ? await api.get(`/meals/today?date=${today}`)
         : await api.get(`/meals/month?month=${selectedDate.slice(0, 7)}`);
 
       if (selectedDate === today) {
@@ -99,6 +99,7 @@ export const TiffinView: React.FC = () => {
   }, [loadMonthMeals, loadMealForDate]);
 
   const handleSaveMeal = async (newLunch: string, newDinner: string) => {
+    const cleanDate = String(selectedDate || today).slice(0, 10);
     setLunch(newLunch);
     setDinner(newDinner);
 
@@ -116,12 +117,12 @@ export const TiffinView: React.FC = () => {
 
     try {
       await api.post('/meals', {
-        date: selectedDate,
+        date: cleanDate,
         lunch: newLunch,
         dinner: newDinner,
       });
       setSaveStatus('saved');
-      await loadMonthMeals();
+      await Promise.all([loadMonthMeals(), loadMealForDate()]);
     } catch (err) {
       console.error('Failed to save meal:', err);
     } finally {
@@ -141,7 +142,7 @@ export const TiffinView: React.FC = () => {
   const todayDay = parseInt(today.split('-')[2], 10);
 
   return (
-    <div className="space-y-8 p-6 max-w-7xl mx-auto">
+    <div className="mobile-page">
       {/* Light Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-200 pb-6">
         <div>
@@ -267,8 +268,8 @@ export const TiffinView: React.FC = () => {
       </div>
 
       {/* Calendar Grid with Real Status Tracking */}
-      <div className="stitch-card p-6 bg-white space-y-4">
-        <div className="flex justify-between items-center">
+      <div className="stitch-card p-4 bg-white space-y-4">
+        <div className="flex flex-col gap-3">
           <div>
             <h3 className="font-display font-bold text-base text-[#0b1c30] flex items-center gap-2">
               <CalendarIcon className="w-4 h-4 text-[#4648d4]" />
@@ -276,7 +277,7 @@ export const TiffinView: React.FC = () => {
             </h3>
             <p className="text-xs text-[#767586] mt-0.5">Click any day to update meal entries.</p>
           </div>
-          <div className="flex items-center gap-3 text-xs">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px]">
             <span className="flex items-center gap-1 text-[#464554]">
               <span className="w-2.5 h-2.5 rounded-full bg-[#006c49] inline-block" /> Completed
             </span>
@@ -287,7 +288,7 @@ export const TiffinView: React.FC = () => {
         </div>
 
         {/* Days Grid */}
-        <div className="grid grid-cols-7 gap-2 pt-2">
+        <div className="grid grid-cols-7 gap-1.5 pt-1">
           {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((day) => {
             const isRecorded = recordedDayMap.has(day);
             const dayStr = `${displayMonth}-${String(day).padStart(2, '0')}`;
@@ -302,26 +303,26 @@ export const TiffinView: React.FC = () => {
               statusClass = isToday
                 ? 'bg-[#e6f9f1] text-[#006c49] border-[#006c49] ring-2 ring-[#006c49] shadow-sm hover:bg-[#d1f4e5]'
                 : 'bg-[#e6f9f1] text-[#006c49] border-[#6ffbbe] hover:bg-[#d1f4e5]';
-              statusBadge = <span className="block text-[10px] text-[#006c49] font-medium mt-0.5">Logged</span>;
+              statusBadge = <span className="block w-full truncate text-[8px] leading-tight text-[#006c49] font-bold">Logged</span>;
             } else if (isToday) {
               statusClass = 'bg-[#4648d4] text-white border-[#4648d4] shadow-md hover:bg-[#3b3dbf]';
-              statusBadge = <span className="block text-[10px] text-white/80 font-medium mt-0.5">Today</span>;
+              statusBadge = <span className="block w-full truncate text-[8px] leading-tight text-white/85 font-bold">Today</span>;
             } else if (isMissing) {
               statusClass = 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100';
-              statusBadge = <span className="block text-[10px] text-amber-700 font-medium mt-0.5">Missing</span>;
+              statusBadge = <span className="block w-full truncate text-[8px] leading-tight text-amber-700 font-bold">Missing</span>;
             }
 
             return (
               <button
                 key={day}
                 onClick={() => setSelectedDate(dayStr)}
-                className={`p-3 rounded-xl text-center border transition-all text-xs font-bold ${
+                className={`flex min-h-[46px] min-w-0 flex-col items-center justify-center gap-0.5 overflow-hidden rounded-xl border px-1 py-1.5 text-center text-[11px] font-extrabold leading-none transition-all ${
                   isSelected
                     ? 'ring-2 ring-[#4648d4] ring-offset-2'
                     : ''
                 } ${statusClass}`}
               >
-                {day}
+                <span className="leading-none">{day}</span>
                 {statusBadge}
               </button>
             );

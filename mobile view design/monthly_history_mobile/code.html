@@ -1,0 +1,177 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Monthly History &amp; Immutable Snapshots</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Material Icons -->
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+<style data-purpose="custom-utilities">
+    /* Custom utility classes if needed */
+    .bg-brand-blue { background-color: #4B4ACF; }
+    .text-brand-blue { color: #4B4ACF; }
+    .border-brand-blue { border-color: #4B4ACF; }
+    .bg-brand-blue-light { background-color: #EEF2FF; }
+    .text-brand-green { color: #10B981; }
+    .bg-brand-green-light { background-color: #D1FAE5; }
+    .text-brand-gray { color: #6B7280; }
+    .bg-brand-gray-light { background-color: #F3F4F6; }
+    
+    /* Hide scrollbar for clean look on mobile */
+    .no-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+    .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+  </style>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              blue: '#4B4ACF',
+              'blue-light': '#EEF2FF',
+              dark: '#111827',
+              gray: '#6B7280',
+              'gray-light': '#F3F4F6',
+              green: '#10B981',
+              'green-light': '#D1FAE5',
+              red: '#EF4444'
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-gray-50 text-gray-900 font-sans antialiased pb-20">
+<!-- BEGIN: Header -->
+<header class="bg-white px-4 py-4 sticky top-0 z-10 border-b border-gray-200">
+<div class="flex items-center justify-between mb-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-brand-blue rounded-lg flex items-center justify-center text-white" style="background-color: rgb(94, 92, 230);">
+<span class="material-icons-outlined">spa</span>
+</div>
+<div>
+<h1 class="text-xl font-bold leading-tight">Spendly</h1>
+<span class="text-xs bg-brand-blue-light text-brand-blue px-2 py-0.5 rounded-full font-medium" style="color: rgb(94, 92, 230);">Hostel Platform</span>
+</div>
+</div>
+<button class="p-2 text-gray-500 hover:text-gray-700 focus:outline-none">
+<span class="material-icons-outlined">menu</span>
+</button>
+</div>
+<div class="flex items-center gap-2 mt-2">
+<span class="material-icons-outlined text-brand-blue text-2xl" style="color: rgb(94, 92, 230);">history</span>
+<h2 class="text-lg font-bold text-gray-900">Monthly History</h2>
+</div>
+<p class="text-sm text-gray-500 mt-1">Review locked monthly cycles, historical meal dues, and financial archives.</p>
+<button class="mt-4 w-full bg-brand-blue text-white py-2.5 px-4 rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-blue-700 transition-colors shadow-sm" style="background-color: rgb(94, 92, 230);">
+<span class="material-icons-outlined text-sm">description</span>
+      View Current Month Snapshot
+    </button>
+</header>
+<!-- END: Header -->
+<!-- BEGIN: Main Content -->
+<main class="p-4 space-y-4">
+<!-- Snapshot Card 1 -->
+<article class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 flex flex-col gap-4" style="background-color: rgba(252, 248, 251, 0.7); backdrop-filter: blur(24px); border-color: rgba(255, 255, 255, 0.3);">
+<!-- Top Section: Date & Status -->
+<div class="flex items-center justify-between">
+<h3 class="text-xl font-bold text-gray-900">2026-08</h3>
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center gap-1 bg-brand-green-light text-brand-green text-xs font-semibold px-2 py-1 rounded-md border border-brand-green/20">
+<span class="material-icons-outlined text-[14px]">check_circle</span>
+            CLOSED
+          </span>
+<span class="inline-flex items-center gap-1 bg-gray-100 text-gray-600 text-xs font-semibold px-2 py-1 rounded-md border border-gray-200">
+<span class="material-icons-outlined text-[14px]">lock</span>
+            Locked
+          </span>
+</div>
+</div>
+<p class="text-xs text-gray-500 -mt-2">Snapshot created at month closure • Immutable record</p>
+<!-- Middle Section: Metrics Grid -->
+<div class="grid grid-cols-3 gap-2 py-3 border-y border-gray-100">
+<div class="flex flex-col">
+<span class="text-xs text-gray-500 font-medium">Meals</span>
+<span class="text-sm font-bold text-gray-900">₹0</span>
+</div>
+<div class="flex flex-col">
+<span class="text-xs text-gray-500 font-medium">Expenses</span>
+<span class="text-sm font-bold text-gray-900">₹0</span>
+</div>
+<div class="flex flex-col">
+<span class="text-xs text-gray-500 font-medium">Payments</span>
+<span class="text-sm font-bold text-brand-green">₹2460</span>
+</div>
+</div>
+<!-- Bottom Section: Action Button -->
+<button class="w-full bg-brand-blue-light text-brand-blue py-2 px-4 rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-blue-100 transition-colors border border-blue-200" style="color: rgb(94, 92, 230); border-color: rgba(94, 92, 230, 0.2);">
+<span class="material-icons-outlined text-sm">description</span>
+        View Full Snapshot
+      </button>
+</article>
+<!-- Snapshot Card 2 (Example of another month) -->
+<article class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 flex flex-col gap-4" style="background-color: rgba(252, 248, 251, 0.7); backdrop-filter: blur(24px); border-color: rgba(255, 255, 255, 0.3);">
+<div class="flex items-center justify-between">
+<h3 class="text-xl font-bold text-gray-900">2026-07</h3>
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center gap-1 bg-brand-green-light text-brand-green text-xs font-semibold px-2 py-1 rounded-md border border-brand-green/20">
+<span class="material-icons-outlined text-[14px]">check_circle</span>
+            CLOSED
+          </span>
+<span class="inline-flex items-center gap-1 bg-gray-100 text-gray-600 text-xs font-semibold px-2 py-1 rounded-md border border-gray-200">
+<span class="material-icons-outlined text-[14px]">lock</span>
+            Locked
+          </span>
+</div>
+</div>
+<p class="text-xs text-gray-500 -mt-2">Snapshot created at month closure • Immutable record</p>
+<div class="grid grid-cols-3 gap-2 py-3 border-y border-gray-100">
+<div class="flex flex-col">
+<span class="text-xs text-gray-500 font-medium">Meals</span>
+<span class="text-sm font-bold text-gray-900">₹1500</span>
+</div>
+<div class="flex flex-col">
+<span class="text-xs text-gray-500 font-medium">Expenses</span>
+<span class="text-sm font-bold text-gray-900">₹200</span>
+</div>
+<div class="flex flex-col">
+<span class="text-xs text-gray-500 font-medium">Payments</span>
+<span class="text-sm font-bold text-brand-green">₹1700</span>
+</div>
+</div>
+<button class="w-full bg-brand-blue-light text-brand-blue py-2 px-4 rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-blue-100 transition-colors border border-blue-200" style="color: rgb(94, 92, 230); border-color: rgba(94, 92, 230, 0.2);">
+<span class="material-icons-outlined text-sm">description</span>
+        View Full Snapshot
+      </button>
+</article>
+</main>
+<!-- END: Main Content -->
+<!-- BEGIN: Bottom Navigation -->
+<nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around items-center h-16 px-2 z-50 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
+<a class="flex flex-col items-center justify-center w-full h-full text-gray-500 hover:text-brand-blue transition-colors" href="#">
+<span class="material-icons-outlined">dashboard</span>
+<span class="text-[10px] mt-1 font-medium">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center w-full h-full text-gray-500 hover:text-brand-blue transition-colors" href="#">
+<span class="material-icons-outlined">restaurant</span>
+<span class="text-[10px] mt-1 font-medium">Meals</span>
+</a>
+<a class="flex flex-col items-center justify-center w-full h-full text-brand-blue" href="#" style="color: rgb(94, 92, 230);">
+<span class="material-icons">history</span>
+<span class="text-[10px] mt-1 font-medium">History</span>
+</a>
+<a class="flex flex-col items-center justify-center w-full h-full text-gray-500 hover:text-brand-blue transition-colors" href="#">
+<span class="material-icons-outlined">person</span>
+<span class="text-[10px] mt-1 font-medium">Profile</span>
+</a>
+</nav>
+<!-- END: Bottom Navigation -->
+
+
+</body></html>

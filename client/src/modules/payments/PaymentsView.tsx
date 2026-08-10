@@ -13,6 +13,7 @@ interface PaymentRecord {
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
   note?: string | null;
   screenshotPath?: string | null;
+  proofUrl?: string | null;
 }
 
 export const PaymentsView: React.FC = () => {
@@ -39,6 +40,9 @@ export const PaymentsView: React.FC = () => {
   const [filePreview, setFilePreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedPath, setUploadedPath] = useState<string | null>(null);
+
+  // Proof viewer modal state
+  const [viewingProofUrl, setViewingProofUrl] = useState<string | null>(null);
 
   // Form state
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -174,7 +178,7 @@ export const PaymentsView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8 p-6 max-w-7xl mx-auto">
+    <div className="mobile-page">
       {/* Header */}
       <div className="border-b border-slate-200 pb-6">
         <h1 className="font-display text-2xl md:text-3xl font-bold text-[#0b1c30] flex items-center gap-3">
@@ -387,21 +391,57 @@ export const PaymentsView: React.FC = () => {
                     <p className="text-xs text-[#767586]">{item.date} {item.note ? `• ${item.note}` : ''}</p>
                   </div>
 
-                  {item.status === 'PENDING' && (
-                    <button
-                      onClick={() => handleDeletePayment(item.id)}
-                      className="text-slate-400 hover:text-rose-500 p-1.5 rounded-lg transition-colors"
-                      title="Delete pending payment"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {item.proofUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setViewingProofUrl(item.proofUrl!)}
+                        className="btn-secondary text-[11px] py-1.5 px-3 flex items-center gap-1.5"
+                        title="View payment proof screenshot"
+                      >
+                        <Image className="w-3.5 h-3.5 text-[#4648d4]" /> Proof
+                      </button>
+                    )}
+
+                    {item.status === 'PENDING' && (
+                      <button
+                        onClick={() => handleDeletePayment(item.id)}
+                        className="text-slate-400 hover:text-rose-500 p-1.5 rounded-lg transition-colors"
+                        title="Delete pending payment"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
           )}
         </div>
       </div>
+
+      {/* Proof Image Viewer Modal */}
+      {viewingProofUrl && (
+        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4 z-[60]">
+          <div className="bg-white rounded-2xl p-4 max-w-lg w-full space-y-3 shadow-2xl">
+            <div className="flex justify-between items-center">
+              <h3 className="font-bold text-sm text-[#0b1c30]">Payment Proof Screenshot</h3>
+              <button
+                type="button"
+                onClick={() => setViewingProofUrl(null)}
+                className="text-slate-400 hover:text-slate-600 text-xs px-2.5 py-1 border border-slate-200 rounded-lg"
+              >
+                Close
+              </button>
+            </div>
+            <img
+              src={viewingProofUrl}
+              alt="Payment Screenshot Proof"
+              className="w-full max-h-96 object-contain rounded-xl border border-slate-200 bg-slate-50"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

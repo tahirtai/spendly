@@ -1,133 +1,138 @@
-# 🛠️ Spendly — Local Setup & Development Guide
+# 🛠️ Spendly — Local Development & Setup Guide
 
-This guide walks you through setting up and running the **Spendly** monorepo locally.
-
----
-
-## 📋 Prerequisites
-
-Before starting, ensure you have the following installed on your machine:
-
-- **Node.js**: `v18.0.0` or higher (Recommended: LTS `v20.x`)
-- **npm**: `v9.x` or higher
-- **PostgreSQL**: PostgreSQL instance or a free Supabase project
-- **Git**: For version control
+This step-by-step guide explains how to clone, configure, build, and run the **Spendly** monorepo on a local development machine.
 
 ---
 
-## 🚀 Quick Start
+## 📋 Software Requirements
 
-### 1. Clone the Repository
+Before setting up Spendly, verify that your machine has the following tools installed:
 
+- **Node.js**: `v18.x` or `v20.x` (LTS recommended)
+- **npm**: `v9.x` or `v10.x`
+- **Git**: Latest stable release
+- **Supabase Account**: Free Supabase project at [supabase.com](https://supabase.com)
+
+---
+
+## 🚀 Step-by-Step Installation
+
+### Step 1: Clone the Repository
 ```bash
 git clone https://github.com/your-username/spendly.git
 cd spendly
 ```
 
-### 2. Install Dependencies
-
-Spendly uses **npm workspaces** to manage packages across `client`, `server`, and `shared`.
-
+### Step 2: Install Workspace Dependencies
+Spendly uses `npm workspaces` to link `shared`, `server`, and `client`. Install all dependencies from the root:
 ```bash
 npm install
 ```
 
-### 3. Set Up Environment Variables
+### Step 3: Configure Environment Variables
 
-Copy the `.env.example` templates to create local `.env` files:
+Create environment configuration files for both server and client:
 
-#### Server Environment (`server/.env`)
+#### 1. Server Environment Configuration (`server/.env`)
+Copy the template file:
 ```bash
 cp server/.env.example server/.env
 ```
-
-Edit `server/.env` with your actual Supabase credentials and database URL:
+Edit `server/.env` with your actual Supabase credentials and database connection string:
 ```env
 PORT=5000
 NODE_ENV=development
 CLIENT_URL=http://localhost:5173
 
-SUPABASE_URL=https://your-project.supabase.co
+# Supabase API Settings (From Supabase Dashboard > Settings > API)
+SUPABASE_URL=https://your-project-id.supabase.co
 SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
-DATABASE_URL=postgresql://postgres:password@db.your-project.supabase.co:5432/postgres
 
-ADMIN_EMAIL=admin@.io
-ADMIN_PASSWORD=SuperAdminPassword123
+# PostgreSQL Direct Connection String (From Supabase Dashboard > Settings > Database)
+DATABASE_URL=postgresql://postgres:your_password@db.your-project-id.supabase.co:5432/postgres
+
+# Seed Admin Credentials
+ADMIN_EMAIL=admin@spendly.io
+ADMIN_PASSWORD=your_secure_admin_password
 ```
 
-#### Client Environment (`client/.env`)
+#### 2. Client Environment Configuration (`client/.env`)
+Copy the template file:
 ```bash
 cp client/.env.example client/.env
 ```
-
+Ensure `client/.env` points to your backend server URL:
 ```env
 VITE_API_URL=http://localhost:5000
 ```
 
-### 4. Database Setup & Prisma Generation
+---
 
-Generate the Prisma client code for the backend:
+### Step 4: Configure Supabase Database & Storage
 
+1. **Database Schema Creation**:
+   - Option A: Run the database push command:
+     ```bash
+     npm run --workspace=server prisma db push
+     ```
+   - Option B: Copy the contents of `docs/supabase_migration.sql` and run it in **Supabase Dashboard > SQL Editor**.
+
+2. **Storage Bucket Creation**:
+   - In Supabase Dashboard, navigate to **Storage > Buckets**.
+   - Create a private bucket named `payment-proofs`.
+
+---
+
+### Step 5: Build Shared Monorepo Package
+
+Generate Prisma Client and compile the shared contracts:
 ```bash
+# Generate Prisma Client TS bindings
 npm run prisma:generate
-```
 
-Push the database schema to your PostgreSQL database:
-
-```bash
-npm run --workspace=server prisma db push
-```
-
-*(Optional)* Seed initial admin account and default meal prices:
-
-```bash
-npm run --workspace=server seed
-```
-
-### 5. Build Shared Library
-
-Build the shared TypeScript contracts used by both client and server:
-
-```bash
+# Build shared package
 npm run build --workspace=shared
 ```
 
-### 6. Run the Application
+---
 
-Start both client and server concurrently in development mode:
+### Step 6: Start Development Servers
 
+Run both backend Express server and frontend Vite server concurrently:
 ```bash
 npm run dev
 ```
 
-- **Frontend Application**: [http://localhost:5173](http://localhost:5173)
-- **Backend API Server**: [http://localhost:5000](http://localhost:5000)
-- **API Health Check**: [http://localhost:5000/api/health](http://localhost:5000/api/health)
+Once running:
+- **Frontend SPA**: [http://localhost:5173](http://localhost:5173)
+- **Backend API**: [http://localhost:5000](http://localhost:5000)
+- **Health Check**: [http://localhost:5000/health](http://localhost:5000/health)
 
 ---
 
-## 📜 Monorepo Scripts Overview
+## 📜 Monorepo Command Reference
 
-| Command | Workspace | Description |
+All workspace commands can be run from the root directory:
+
+| Command | Target | Description |
 | :--- | :--- | :--- |
-| `npm run dev` | Monorepo Root | Starts server and client concurrently |
-| `npm run build` | Monorepo Root | Builds shared, server, and client for production |
-| `npm run client` | client | Starts Vite development server for client |
-| `npm run server` | server | Starts Express development server |
-| `npm run prisma:generate` | server | Generates Prisma client bindings |
+| `npm run dev` | Monorepo Root | Launches server and client concurrently in dev mode |
+| `npm run build` | Monorepo Root | Compiles `shared`, `server`, and `client` for production |
+| `npm run client` | `client/` | Runs Vite frontend dev server |
+| `npm run server` | `server/` | Runs Express backend dev server |
+| `npm run prisma:generate` | `server/` | Generates Prisma client TypeScript types |
 
 ---
 
-## 🛠️ Troubleshooting Common Issues
+## 🛠️ Troubleshooting & Frequently Asked Questions
 
-### Issue 1: CORS Error on API Calls
-- Ensure `CLIENT_URL` in `server/.env` matches `http://localhost:5173`.
-- Verify the server is running on port 5000.
+### 1. `Cannot find module 'spendly-shared'`
+- Solution: Run `npm run build --workspace=shared` to compile `shared/dist/index.js`.
 
-### Issue 2: Prisma Client Not Generated
-- Run `npm run prisma:generate` manually from root or inside `server/`.
+### 2. `Invalid token` or `Authentication failed`
+- Solution: Ensure `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in `server/.env` match your active Supabase project credentials.
 
-### Issue 3: Supabase Authentication Errors
-- Double-check `SUPABASE_URL` and `SUPABASE_ANON_KEY` in `server/.env`.
-- Ensure email authentication is enabled in your Supabase Dashboard under **Authentication > Providers**.
+### 3. `File upload error: Only PNG, JPEG, and WEBP images are allowed`
+- Solution: Ensure uploaded payment screenshot files use valid image formats (`.png`, `.jpg`, `.jpeg`, `.webp`) and remain under 5MB.

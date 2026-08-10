@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { Sidebar } from './components/Sidebar';
+import { AppShell } from './components/AppShell';
+import { SplashScreen } from './components/SplashScreen';
 import { useAuthStore } from './store/useAuthStore';
 
 // Modules
@@ -14,8 +15,9 @@ import { PaymentsView } from './modules/payments/PaymentsView';
 import { HistoryView } from './modules/history/HistoryView';
 import { ReportsView } from './modules/reports/ReportsView';
 import { AdminView } from './modules/admin/AdminView';
+import { ProfileView } from './modules/profile/ProfileView';
 
-// Protected Route Wrapper for Authenticated Users
+// Protected Route Wrapper — wraps content in the full mobile app shell
 const ProtectedLayout: React.FC<{ children: React.ReactNode; allowedRoles?: string[] }> = ({
   children,
   allowedRoles,
@@ -30,19 +32,14 @@ const ProtectedLayout: React.FC<{ children: React.ReactNode; allowedRoles?: stri
     return <Navigate to="/dashboard" replace />;
   }
 
-  return (
-    <div className="flex min-h-screen bg-[#f8f9ff] text-[#0b1c30]">
-      <Sidebar />
-      <main className="flex-1 overflow-y-auto min-h-screen pb-12">
-        {children}
-      </main>
-    </div>
-  );
+  return <AppShell>{children}</AppShell>;
 };
 
 export const App: React.FC = () => {
   return (
-    <Router>
+    <>
+      <SplashScreen />
+      <Router>
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<LandingView />} />
@@ -98,6 +95,14 @@ export const App: React.FC = () => {
             </ProtectedLayout>
           }
         />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedLayout>
+              <ProfileView />
+            </ProtectedLayout>
+          }
+        />
 
         {/* Admin & Super Admin Protected Route */}
         <Route
@@ -113,6 +118,7 @@ export const App: React.FC = () => {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
+    </>
   );
 };
 

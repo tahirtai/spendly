@@ -4,88 +4,68 @@ import {
   LayoutDashboard, 
   UtensilsCrossed, 
   Receipt, 
-  CreditCard, 
-  History, 
-  BarChart3, 
-  ShieldCheck, 
-  Sparkles,
-  LogOut,
-  User as UserIcon
+  CreditCard
 } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
+import { UserAvatar } from './UserAvatar';
 
 export const Sidebar: React.FC = () => {
-  const { user, logout } = useAuthStore();
+  const { user } = useAuthStore();
 
   const navItems = [
-    { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { to: '/tiffin', label: 'Tiffin Tracker', icon: UtensilsCrossed },
-    { to: '/expenses', label: 'Daily Expenses', icon: Receipt },
+    { to: '/dashboard', label: 'Home', icon: LayoutDashboard },
+    { to: '/tiffin', label: 'Tiffin', icon: UtensilsCrossed },
+    { to: '/expenses', label: 'Expenses', icon: Receipt },
     { to: '/payments', label: 'Payments', icon: CreditCard },
-    { to: '/history', label: 'Monthly History', icon: History },
-    { to: '/reports', label: 'Reports & Analytics', icon: BarChart3 },
-    ...(user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN' 
-      ? [{ to: '/admin', label: 'Admin Panel', icon: ShieldCheck }] 
-      : []),
   ];
 
   return (
-    <aside className="w-64 bg-white border-r border-[#e2e8f0] flex flex-col justify-between p-5 min-h-screen sticky top-0 shadow-[2px_0_12px_rgba(70,72,212,0.03)] z-20">
-      <div>
-        {/* Brand Logo */}
-        <div className="flex items-center gap-3 px-2 py-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-[#4648d4] text-white flex items-center justify-center shadow-md shadow-[#4648d4]/20">
-            <Sparkles className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <h1 className="font-display font-bold text-xl text-[#0b1c30] tracking-tight">Spendly</h1>
-            <span className="text-[10px] bg-[#e1e0ff] text-[#4648d4] font-semibold px-2 py-0.5 rounded-full border border-[#c0c1ff]">
-              Hostel Platform
-            </span>
-          </div>
-        </div>
+    <>
+      <NavLink
+        to="/profile"
+        title={user?.fullName ? `Open ${user.fullName}'s profile` : 'Open profile'}
+        className={({ isActive }) =>
+          `fixed z-50 flex h-11 w-11 items-center justify-center rounded-full border border-white/80 bg-white/80 shadow-[0_12px_28px_rgba(31,38,135,0.12)] backdrop-blur-2xl transition-all active:scale-95 ${
+            isActive ? 'ring-2 ring-[#4648d4] ring-offset-2 ring-offset-transparent' : ''
+          }`
+        }
+        style={{ right: 'max(1rem, calc(50% - 204px))', top: 'max(env(safe-area-inset-top), 0.75rem)' }}
+      >
+        <UserAvatar user={user} size="sm" className="h-9 w-9" />
+      </NavLink>
 
-        {/* Navigation Menu */}
-        <nav className="space-y-1">
+      <nav className="bottom-nav fixed inset-x-0 bottom-0 z-50 mx-auto w-full max-w-[430px] border border-white/70 bg-white/85 px-3 pt-2 shadow-[0_-18px_42px_rgba(31,38,135,0.10)] backdrop-blur-2xl">
+        <div className="grid grid-cols-4 gap-1">
           {navItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                `flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-1 py-1.5 text-[10px] font-bold transition-all ${
                   isActive
-                    ? 'bg-[#4648d4] text-white shadow-md shadow-[#4648d4]/20 font-semibold'
-                    : 'text-[#464554] hover:text-[#0b1c30] hover:bg-[#eff4ff]'
+                    ? 'text-[#4441cc]'
+                    : 'text-[#777586] hover:text-[#4441cc]'
                 }`
               }
             >
-              <item.icon className="w-4 h-4" />
-              {item.label}
+              {({ isActive }) => (
+                <>
+                  <span
+                    className={`flex h-8 w-8 items-center justify-center rounded-2xl transition-all ${
+                      isActive
+                        ? 'bg-[#e2dfff] shadow-sm'
+                        : 'bg-transparent'
+                    }`}
+                  >
+                    <item.icon className="h-[18px] w-[18px]" />
+                  </span>
+                  <span className="max-w-full truncate leading-none">{item.label}</span>
+                </>
+              )}
             </NavLink>
           ))}
-        </nav>
-      </div>
-
-      {/* User Profile Footer */}
-      <div className="border-t border-[#e2e8f0] pt-4 space-y-3">
-        <div className="flex items-center gap-3 px-2">
-          <div className="w-9 h-9 rounded-full bg-[#eff4ff] border border-[#d3e4fe] flex items-center justify-center font-bold text-[#4648d4] text-sm">
-            <UserIcon className="w-4 h-4" />
-          </div>
-          <div className="flex-1 truncate">
-            <p className="text-sm font-semibold text-[#0b1c30] truncate">{user?.fullName || 'Student User'}</p>
-            <p className="text-xs text-[#767586] capitalize font-medium">{user?.role?.toLowerCase() || 'student'}</p>
-          </div>
         </div>
-
-        <button
-          onClick={logout}
-          className="w-full flex items-center justify-center gap-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 py-2 rounded-xl transition-colors border border-rose-200"
-        >
-          <LogOut className="w-3.5 h-3.5" />
-          Sign Out
-        </button>
-      </div>
-    </aside>
+      </nav>
+    </>
   );
 };

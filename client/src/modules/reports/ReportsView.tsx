@@ -55,7 +55,7 @@ export const ReportsView: React.FC = () => {
   const totalSpent = report.mealTotal + report.expenseTotal;
 
   return (
-    <div className="space-y-8 p-6 max-w-7xl mx-auto">
+    <div className="mobile-page">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-200 pb-6">
         <div>
           <h1 className="font-display text-2xl md:text-3xl font-bold text-[#0b1c30] flex items-center gap-3">

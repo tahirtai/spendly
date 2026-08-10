@@ -1,4 +1,4 @@
-# 🍱 Spendly — Modern Hostel & PG Expense Management Platform
+# 🍱 Spendly — Monorepo Hostel & PG Expense Management Platform
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue?logo=typescript)](https://www.typescriptlang.org/)
@@ -8,51 +8,67 @@
 [![Supabase](https://img.shields.io/badge/Supabase-Auth%20%26%20Storage-3ECF8E?logo=supabase)](https://supabase.com/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38B2AC?logo=tailwindcss)](https://tailwindcss.com/)
 
-**Spendly** is a production-ready, full-stack SaaS platform designed for hostel and PG residents to seamlessly manage daily tiffin meal logs, personal categorized expenses, and payment proof verifications.
-
-Built with a modular TypeScript monorepo architecture (`shared`, `server`, `client`), Spendly provides real-time monthly financial tracking, automated meal calculations, immutable historical snapshots, and an intuitive Admin management panel.
+**Spendly** is a production-ready, full-stack monorepo web and mobile-first platform engineered specifically for hostel residents, PG occupants, and mess managers. It simplifies daily tiffin meal logging, personal categorized spending, cash/UPI payment verifications, and monthly financial balance settlements into an elegant, glassmorphic single-page application.
 
 ---
 
-## 📸 Product Screenshots
+## 💡 What Problem Spendly Solves
 
-| Dashboard Overview | Daily Tiffin Log |
-| :---: | :---: |
-| ![Dashboard Screenshot](docs/assets/dashboard.png) | ![Tiffin Screenshot](docs/assets/tiffin.png) |
+Hostel and PG mess tracking is traditionally managed via manual registers or chaotic chat groups. This leads to:
+1. **Untracked Meal Charges**: Confusion over whether a student had a full meal, half meal, or skipped lunch/dinner.
+2. **Delayed Payment Settlements**: Lack of verifiable payment proof (UPI screenshots or cash receipts).
+3. **Disputed Monthly Calculations**: Errors when calculating mess bills and shared hostel expenditures at month-end.
+4. **Lack of Immutable Records**: Historical disputes when mess rates change mid-month.
 
-| Payments & UPI Proof | Admin Control Panel |
-| :---: | :---: |
-| ![Payments Screenshot](docs/assets/payments.png) | ![Admin Screenshot](docs/assets/admin.png) |
-
-*(Note: Add actual screenshots to `docs/assets/` when deploying to production)*
+Spendly solves these problems by providing real-time daily meal tracking, custom expense logging, instant balance settlement upon admin verification, price-versioning rules, and immutable month locking.
 
 ---
 
-## ✨ Features
+## ✨ Features Overview
 
-- 🍱 **One-Click Tiffin Tracking**: Log daily lunch and dinner meals (Half, Full, Skip) with automatic price calculations.
-- 📆 **Missing Entry Detection**: Built-in calendar modal alerts users to unrecorded days in unlocked months.
-- 💸 **Categorized Expenses**: Track personal daily expenditures (Food, Grocery, Travel, Shopping, Medical).
-- 💳 **Payment Logs & UPI Screenshot Upload**: Submit cash or UPI payment logs with image proof directly to Supabase Storage.
-- 🛡️ **Role-Based Access Control**: Secure Student, Admin, and Super Admin roles with Supabase Auth (JWT).
-- 🔒 **Month Locking & Price Versioning**: Admins can lock closed months to generate immutable snapshots. Meal price updates apply only to future logs.
-- 📊 **Monthly Reports & Snapshots**: Automated aggregation of monthly totals with PDF and CSV export capabilities.
-- ⚡ **Real-time Balance Settlement**: Approved payments instantly update user remaining balances.
+- 🍱 **One-Click Tiffin Tracking**: Log daily lunch and dinner meals (`HALF`, `FULL`, `SKIP`) with automated cost computation based on workspace meal pricing rules.
+- 📆 **Missing Entry Alerts & Calendar**: Visual monthly calendar identifying unfilled days so residents never miss logging a meal.
+- 💸 **Categorized Personal Expenses**: Record daily personal expenditures (Food, Tea, Snacks, Grocery, Laundry, Travel, Medical, Shopping, Other).
+- 💳 **Payment Logs & Screenshot Upload**: Submit cash or UPI payment entries with screenshot proof uploaded securely to Supabase Storage.
+- 🛡️ **Role-Based Access Control**: Granular permissions across `STUDENT`, `ADMIN`, and `SUPER_ADMIN` roles.
+- 🔒 **Month Locking & Price Versioning**: Admins lock finalized months to freeze snapshots. Meal pricing updates apply dynamically without altering locked past records.
+- 📊 **Monthly Reports & Analytics**: Interactive spending charts powered by `Chart.js`, expense breakdowns, and CSV export capabilities.
+- ⚡ **Real-Time Financial Settlement**: Approved payment receipts immediately adjust user balances and generate monthly snapshots.
+
+---
+
+## 👤 User & Admin Workflows
+
+```
+  +-------------------------------------------------------------------------+
+  |                             USER WORKFLOW                               |
+  +-------------------------------------------------------------------------+
+  | 1. Register / Login -> 2. Select Workspace -> 3. Log Meals & Expenses   |
+  | 4. Upload UPI Screenshot -> 5. View Real-Time Balance & Monthly Reports  |
+  +-------------------------------------------------------------------------+
+
+  +-------------------------------------------------------------------------+
+  |                            ADMIN WORKFLOW                               |
+  +-------------------------------------------------------------------------+
+  | 1. Monitor Member Balances -> 2. Verify/Reject Pending UPI Payments     |
+  | 3. Set Half & Full Meal Prices -> 4. Lock Closed Months for Snapshots   |
+  +-------------------------------------------------------------------------+
+```
 
 ---
 
 ## 🛠️ Technology Stack
 
-| Layer | Technology | Purpose |
+| Layer | Technology | Description |
 | :--- | :--- | :--- |
-| **Frontend** | React 18, Vite, TypeScript | SPA framework and fast dev server |
-| **Styling** | Tailwind CSS, Lucide Icons | Responsive modern UI design system |
-| **State Management**| Zustand | Lightweight client-side state management |
-| **Backend** | Node.js, Express.js, TypeScript | RESTful API server & middleware |
-| **Database** | PostgreSQL, Prisma ORM | Relational data persistence & type-safe ORM |
-| **Authentication** | Supabase Auth | JWT bearer tokens & role authorization |
-| **Storage** | Supabase Storage | Proof of payment image bucket hosting |
-| **Monorepo** | npm Workspaces | Shared TypeScript interfaces & types |
+| **Frontend** | React 18, Vite 5, TypeScript | Responsive Single Page Application with Lumina glassmorphism design |
+| **Styling** | Tailwind CSS 3.4, Lucide Icons, Framer Motion | Dynamic theme styling and micro-animations |
+| **State Management**| Zustand | Persistent authentication and client application state |
+| **Charts & Reports** | Chart.js, React-ChartJS-2 | Interactive spending distribution and monthly trend visualizer |
+| **Backend** | Node.js, Express.js, TypeScript | Modular RESTful API server with custom middleware |
+| **Database & ORM** | PostgreSQL 15+, Prisma ORM | Relational schema with index optimizations and type-safe query generation |
+| **Auth & Storage** | Supabase Auth, Supabase Storage | JWT Bearer authentication and private `payment-proofs` image storage |
+| **Shared Layer** | npm Workspaces | Shared Zod schemas, TypeScript interfaces, and validation contracts |
 
 ---
 
@@ -70,159 +86,198 @@ Built with a modular TypeScript monorepo architecture (`shared`, `server`, `clie
 |shared |                     |server |                     |client |
 +-------+                     +-------+                     +-------+
  Shared Types                  Express API                   React Vite SPA
- Zod Validation Schemas        Prisma ORM                    Tailwind UI
- API DTO Contracts             Supabase Admin Client         Zustand Store
+ Zod Validation Schemas        Prisma ORM & Supabase Admin   Tailwind UI & Glassmorphism
+ API DTO Contracts             Multer Memory Storage         Zustand Auth Store
 ```
 
 ---
 
-## 📁 Repository Folder Structure
+## 📁 Project Structure
 
 ```
 spendly/
 ├── client/                  # Frontend React SPA (Vite + TailwindCSS)
 │   ├── src/
-│   │   ├── components/      # Reusable UI components (Sidebar, Modals, Headers)
-│   │   ├── lib/             # API client & date utilities
-│   │   ├── modules/         # Feature modules (Dashboard, Tiffin, Expenses, Admin, etc.)
-│   │   └── store/           # Zustand state management stores
+│   │   ├── components/      # AppShell, Sidebar, Headers, Modals
+│   │   ├── lib/             # API Fetch Client & Date Utils
+│   │   ├── modules/         # Landing, Auth, Dashboard, Tiffin, Expenses, Payments, History, Reports, Admin, Profile
+│   │   └── store/           # Zustand Auth Store
 │   └── package.json
-├── server/                  # Backend Node.js Express API
-│   ├── prisma/              # Prisma DB Schema (`schema.prisma`)
+├── server/                  # Backend Express REST API
+│   ├── prisma/              # Prisma Schema (`schema.prisma`)
 │   ├── src/
-│   │   ├── lib/             # Supabase & Prisma clients
-│   │   ├── routes/          # API route handlers & middleware
-│   │   └── index.ts         # Express server entry point
+│   │   ├── lib/             # Supabase Admin Client
+│   │   ├── routes/          # API Route Handler (`api.routes.ts`)
+│   │   ├── seed.ts          # Super Admin & Workspace Seeder
+│   │   └── index.ts         # Express Entry Point
 │   └── package.json
-├── shared/                  # Shared TypeScript types & contracts
+├── shared/                  # Monorepo Shared Package
 │   └── src/
-│       └── index.ts         # Enums, interfaces, and validation schemas
-├── docs/                    # Project documentation & specs
+│       └── index.ts         # Shared Enums, Schemas, & Types
+├── docs/                    # Project Documentation
 │   ├── PRD.md               # Product Requirements Document
 │   ├── TRD.md               # Technical Requirements Document
-│   ├── STITCH_DESIGN_SPEC.md# Master UI design specification & blueprint
-│   ├── supabase_migration.sql # Raw Supabase SQL migration script
-│   ├── SETUP.md             # Detailed local development guide
-│   ├── DATABASE.md          # Database schema & Supabase setup
-│   ├── DEPLOYMENT.md        # Production deployment guide
-│   └── SECURITY.md          # Security guidelines
-├── .env.example             # Monorepo environment variable template
-├── .gitignore               # Version control ignore definitions
-├── LICENSE                  # MIT License
-└── package.json             # Monorepo workspace configuration
+│   ├── DATABASE.md          # Relational Schema & Storage Spec
+│   ├── SECURITY.md          # Security Architecture & Hardening
+│   ├── SETUP.md             # Local Developer Setup Guide
+│   ├── DEPLOYMENT.md        # Production Deployment Specs
+│   ├── STITCH_DESIGN_SPEC.md# Master UI Design System & Specification
+│   └── supabase_migration.sql # Production Supabase Migration SQL
+├── MEMORY.md                # Technical Memory for AI Coding Agents
+├── .env.example             # Template for Environment Variables
+├── .gitignore               # Production Version Control Ignores
+└── package.json             # Root Monorepo Configuration
 ```
 
 ---
 
-## ⚡ Quick Start & Local Setup
+## 🔐 Authentication & Authorization Architecture
 
-### 1. Clone & Install Dependencies
+- **Supabase Auth Integration**: Registration creates an auth user in Supabase Auth as well as a corresponding database row in the `User` table linked to the `SPENDLY_HOSTEL` workspace.
+- **JWT Bearer Token Flow**: The client stores the JWT in `localStorage` (`spendly_auth_token`) and includes it in the `Authorization: Bearer <token>` header for all API requests.
+- **Role Control**:
+  - `requireAuth`: Middleware verifying valid Supabase JWTs.
+  - `requireAdmin`: Middleware verifying the requesting user holds `ADMIN` or `SUPER_ADMIN` privileges in the `User` database record.
+
+---
+
+## 🗄️ Database Architecture
+
+The relational schema is configured in PostgreSQL and accessed via Prisma and the Supabase Admin SDK:
+- **`Workspace`**: Workspace entity storing code `SPENDLY_HOSTEL`.
+- **`User`**: User record mapped to Supabase `auth.users.id`.
+- **`WorkspaceMember`**: Junction table mapping users to workspaces with specified roles.
+- **`MealPrice`**: Tracks half and full meal rates per workspace (`halfPrice`, `fullPrice`).
+- **`Meal`**: Daily lunch & dinner records with date constraint `UNIQUE(workspaceId, userId, date)`.
+- **`ExpenseCategory`**: Pre-seeded expense categories (`Food`, `Tea`, `Snacks`, `Grocery`, `Laundry`, `Travel`, `Medical`, `Shopping`, `Other`).
+- **`Expense`**: Logged personal expenditures.
+- **`Payment`**: Payment submissions (`CASH`, `UPI`) with verification status (`PENDING`, `APPROVED`, `REJECTED`).
+- **`MonthlySnapshot`**: Aggregated end-of-month balances per user/month (`isLocked`, `status`).
+- **`AuditLog`**: System and administrative audit trail.
+
+---
+
+## 📡 API Endpoints Overview
+
+| Category | Endpoint | Method | Role | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| **Auth** | `/api/auth/register` | `POST` | Public | Register new user account |
+| **Auth** | `/api/auth/login` | `POST` | Public | Authenticate user & return JWT token |
+| **User** | `/api/user/profile` | `GET`, `PATCH` | Student+ | View and update profile information |
+| **Dashboard** | `/api/dashboard/summary` | `GET` | Student+ | Get real-time balance & monthly metrics |
+| **Meals** | `/api/meals/today` | `GET` | Student+ | Fetch today's meal selection |
+| **Meals** | `/api/meals` | `POST` | Student+ | Record lunch/dinner options |
+| **Meals** | `/api/meals/month` | `GET` | Student+ | Get monthly meal records |
+| **Expenses** | `/api/expenses` | `GET`, `POST` | Student+ | Fetch & create personal expenses |
+| **Payments** | `/api/payments` | `GET`, `POST` | Student+ | Submit cash/UPI payment entries |
+| **Payments** | `/api/payments/upload-proof` | `POST` | Student+ | Upload payment proof screenshot |
+| **Admin** | `/api/admin/members` | `GET` | Admin+ | Fetch workspace members & balances |
+| **Admin** | `/api/admin/payments/:id/status` | `PATCH` | Admin+ | Approve or reject pending payments |
+| **Admin** | `/api/admin/prices` | `GET`, `POST` | Admin+ | Read and update meal prices |
+| **Admin** | `/api/admin/month-lock` | `POST` | Admin+ | Lock/unlock monthly snapshot |
+| **Reports** | `/api/reports/monthly` | `GET` | Student+ | Generate monthly report & category breakdown |
+
+---
+
+## ☁️ Storage & Payment Proof Architecture
+
+1. **Upload Handler**: `multer` intercepts incoming `multipart/form-data` requests in-memory up to 5MB, strictly validating `PNG`, `JPEG`, and `WEBP` MIME types.
+2. **Supabase Bucket**: Uploads buffer directly to the private `payment-proofs` Supabase bucket under `${userId}/${timestamp}_filename`.
+3. **Signed Access URLs**: Client requests private signed URLs via `GET /api/payments/:id/proof-url`, providing temporary, secure 1-hour access for admins to inspect proof screenshots.
+
+---
+
+## 🔑 Environment Variables
+
+### Server (`server/.env`)
+```env
+PORT=5000
+NODE_ENV=development
+CLIENT_URL=http://localhost:5173
+SUPABASE_URL=https://your-project-id.supabase.co
+SUPABASE_ANON_KEY=your_supabase_anon_key_here
+SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key_here
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key_here
+DATABASE_URL=postgresql://postgres:your_password@db.your-project-id.supabase.co:5432/postgres
+ADMIN_EMAIL=admin@spendly.io
+ADMIN_PASSWORD=your_secure_admin_password
+```
+
+### Client (`client/.env`)
+```env
+VITE_API_URL=http://localhost:5000
+```
+
+---
+
+## ⚡ Local Development Setup
+
+### 1. Clone & Install
 ```bash
 git clone https://github.com/your-username/spendly.git
 cd spendly
 npm install
 ```
 
-### 2. Configure Environment Variables
+### 2. Configure Environment Files
 Copy `.env.example` to `server/.env` and `client/.env`:
 ```bash
 cp server/.env.example server/.env
 cp client/.env.example client/.env
 ```
 
-### 3. Database Setup
+### 3. Database Migration & Seed
 ```bash
-# Generate Prisma Client
+# Generate Prisma client
 npm run prisma:generate
 
-# Push schema to PostgreSQL/Supabase
-npm run --workspace=server prisma db push
-
-# Seed initial Super Admin account
-npm run --workspace=server seed
-```
-
-### 4. Build Shared Package & Run Dev Server
-```bash
-# Build shared TypeScript package
+# Build shared package
 npm run build --workspace=shared
 
-# Start server and client concurrently
+# Start full-stack development server
 npm run dev
 ```
 
-- **Frontend**: [http://localhost:5173](http://localhost:5173)
+- **Frontend Application**: [http://localhost:5173](http://localhost:5173)
 - **Backend API**: [http://localhost:5000](http://localhost:5000)
 
-For comprehensive setup details, see [docs/SETUP.md](docs/SETUP.md).
+---
+
+## 🚀 Production Build & Deployment
+
+### Monorepo Build Command
+```bash
+npm run build
+```
+Executes compilation across `shared`, `server`, and `client`.
+
+### Supported Deployment Targets
+- **Frontend SPA**: Vercel or Netlify (Deploy `client/dist`).
+- **Backend Node API**: Render, Railway, or DigitalOcean App Platform (Execute `npm run start --workspace=server`).
+- **Database & Storage**: Supabase Cloud PostgreSQL & Supabase Storage.
 
 ---
 
-## 🔑 Environment Variables
+## 🛡️ Security Highlights
 
-| Variable | Scope | Description | Default / Example |
-| :--- | :--- | :--- | :--- |
-| `PORT` | Server | Express API server port | `5000` |
-| `CLIENT_URL` | Server | Allowed CORS client origin | `http://localhost:5173` |
-| `SUPABASE_URL` | Server | Supabase project URL | `https://xyz.supabase.co` |
-| `SUPABASE_ANON_KEY` | Server | Supabase public anon key | `<your_supabase_anon_key>` |
-| `SUPABASE_SERVICE_ROLE_KEY` | Server | Supabase service role admin key | `<your_supabase_service_role_key>` |
-| `DATABASE_URL` | Server | Direct PostgreSQL connection string | `postgresql://...` |
-| `VITE_API_URL` | Client | Frontend API base URL | `http://localhost:5000` |
+- **Server-Side Isolation**: Supabase Service-Role keys remain isolated on the Express server.
+- **Signed Storage URLs**: Private payment screenshots are never exposed via public URLs.
+- **Strict Validation**: All incoming API payloads are parsed and sanitized via Zod schemas.
+- **CORS Protection**: Restricted origin configuration preventing unauthorized cross-domain requests.
 
 ---
 
-## 📜 Available NPM Scripts
+## 🎯 Current Status & Roadmap
 
-- `npm run dev`: Launch client and server concurrently in development mode.
-- `npm run build`: Compile `shared`, `server`, and `client` for production.
-- `npm run client`: Run Vite frontend dev server.
-- `npm run server`: Run Express backend dev server.
-- `npm run prisma:generate`: Generate Prisma Client TS definitions.
-
----
-
-## 🚀 Deployment
-
-- **Frontend**: Deploy `client/` to **Vercel** or **Netlify**.
-- **Backend**: Deploy `server/` to **Render**, **Railway**, or **DigitalOcean App Platform**.
-- **Database & Storage**: Hosted on **Supabase**.
-
-Read full deployment instructions in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+- **Current Status**: Production Ready & Fully Operational.
+- **Planned Enhancements**:
+  - [ ] Multi-workspace creation UI for multiple PGs/hostels
+  - [ ] Push notifications for monthly pending dues
+  - [ ] Direct UPI QR code generation inside payment portal
+  - [ ] Automated PDF statement downloading
 
 ---
 
-## 🗺️ Roadmap & Future Features
-
-- [ ] **Multi-Hostel Room Rent Module**
-- [ ] **Shared PG Utility Bills Splitting**
-- [ ] **Razorpay / Stripe Payment Gateway Integration**
-- [ ] **WhatsApp & Push Notifications for Unpaid Dues**
-- [ ] **Mobile App (React Native)**
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Please open an issue or submit a Pull Request following these steps:
-
-1. Fork the Project.
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`).
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`).
-4. Push to the Branch (`git push origin feature/AmazingFeature`).
-5. Open a Pull Request.
-
----
-
-## 📄 License
+## 📜 License
 
 Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
-
----
-
-## 👨‍💻 Author
-
-Crafted with care for students and hostel managers.
-
-- **GitHub**: [@your-username](https://github.com/your-username)
-- **Project Repo**: [https://github.com/your-username/spendly](https://github.com/your-username/spendly)

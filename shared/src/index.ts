@@ -100,8 +100,8 @@ export type MonthLockInput = z.infer<typeof MonthLockSchema>;
 
 export const UpdateProfileSchema = z.object({
   fullName: z.string().min(2, 'Full name must be at least 2 characters').optional(),
-  phone: z.string().optional(),
-  avatarUrl: z.string().url('Invalid URL').optional(),
+  phone: z.string().nullable().optional(),
+  avatarUrl: z.string().nullable().optional(),
 });
 export type UpdateProfileInput = z.infer<typeof UpdateProfileSchema>;
 

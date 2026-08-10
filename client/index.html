@@ -2,12 +2,66 @@
 <html lang="en" class="light">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Spendly — Hostel & PG Expense Platform</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    
+    <!-- Branding & Favicon for Google, Apple, and all Browsers -->
+    <link rel="icon" type="image/svg+xml" href="/spendly-icon.svg" />
+    <link rel="alternate icon" type="image/png" sizes="192x192" href="/spendly-icon.png" />
+    <link rel="shortcut icon" href="/spendly-icon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/spendly-icon.png" />
+    
+    <!-- Title & SEO -->
+    <title>Spendly — Hostel &amp; PG Expense Platform</title>
+    <meta name="description" content="Spendly is a modern hostel &amp; PG expense tracking platform for managing shared meals, tiffins, roommate expenses, and UPI payment verification." />
+    
+    <!-- Mobile Web App Branding -->
+    <meta name="theme-color" content="#5e5ce6" />
+    <meta name="application-name" content="Spendly" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Spendly" />
+
+    <!-- Open Graph / Social Media Preview -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Spendly" />
+    <meta property="og:title" content="Spendly — Hostel &amp; PG Expense Platform" />
+    <meta property="og:description" content="Effortless hostel &amp; PG expense splitting, tiffin tracking, and transparent UPI payment verification for roommates." />
+    <meta property="og:image" content="/spendly-logo.png" />
+    <meta property="og:image:type" content="image/png" />
+    
+    <!-- Twitter Card Preview -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Spendly — Hostel &amp; PG Expense Platform" />
+    <meta name="twitter:description" content="Effortless hostel &amp; PG expense splitting, tiffin tracking, and transparent UPI payment verification for roommates." />
+    <meta name="twitter:image" content="/spendly-logo.png" />
+
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Inter:ital,opsz,wght@0,14..32,300..700;1,14..32,300..700&display=swap" rel="stylesheet">
+
+    <!-- Structured Data (JSON-LD) for Google Search Console & Knowledge Panel -->
+    <script type="application/ld+json">
+      [
+        {
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          "name": "Spendly",
+          "url": "https://spendly.app/",
+          "logo": "/spendly-logo.png"
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "WebApplication",
+          "name": "Spendly",
+          "applicationCategory": "FinanceApplication",
+          "operatingSystem": "All",
+          "description": "Smart hostel & PG expense splitting, automated tiffin management, and transparent monthly ledger for roommates.",
+          "logo": "/spendly-logo.png"
+        }
+      ]
+    </script>
   </head>
   <body class="bg-[#f8f9ff] text-[#0b1c30] font-sans antialiased">
     <div id="root"></div>
