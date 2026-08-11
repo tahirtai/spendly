@@ -303,13 +303,13 @@ export const TiffinView: React.FC = () => {
               statusClass = isToday
                 ? 'bg-[#e6f9f1] text-[#006c49] border-[#006c49] ring-2 ring-[#006c49] shadow-sm hover:bg-[#d1f4e5]'
                 : 'bg-[#e6f9f1] text-[#006c49] border-[#6ffbbe] hover:bg-[#d1f4e5]';
-              statusBadge = <span className="block w-full truncate text-[8px] leading-tight text-[#006c49] font-bold">Logged</span>;
+              statusBadge = <span className="w-1.5 h-1.5 rounded-full bg-[#006c49] inline-block mt-0.5" title="Logged" />;
             } else if (isToday) {
               statusClass = 'bg-[#4648d4] text-white border-[#4648d4] shadow-md hover:bg-[#3b3dbf]';
-              statusBadge = <span className="block w-full truncate text-[8px] leading-tight text-white/85 font-bold">Today</span>;
+              statusBadge = <span className="w-1.5 h-1.5 rounded-full bg-white inline-block mt-0.5" title="Today" />;
             } else if (isMissing) {
               statusClass = 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100';
-              statusBadge = <span className="block w-full truncate text-[8px] leading-tight text-amber-700 font-bold">Missing</span>;
+              statusBadge = <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block mt-0.5" title="Missing" />;
             }
 
             return (

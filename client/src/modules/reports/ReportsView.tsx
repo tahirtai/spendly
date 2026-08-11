@@ -67,18 +67,18 @@ export const ReportsView: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
           <input
             type="month"
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
-            className="input-field cursor-pointer text-sm w-40"
+            className="input-field cursor-pointer text-xs py-2 px-3 w-full sm:w-36 flex-shrink-0"
           />
-          <button onClick={() => window.print()} className="btn-primary text-xs">
-            <FileText className="w-4 h-4" /> Download PDF
+          <button onClick={() => window.print()} className="btn-primary text-xs py-2 px-3 flex-1 sm:flex-initial flex items-center justify-center gap-1.5 whitespace-nowrap">
+            <FileText className="w-3.5 h-3.5" /> Download PDF
           </button>
-          <button onClick={handleDownloadCSV} className="btn-secondary text-xs">
-            <FileSpreadsheet className="w-4 h-4" /> Export CSV
+          <button onClick={handleDownloadCSV} className="btn-secondary text-xs py-2 px-3 flex-1 sm:flex-initial flex items-center justify-center gap-1.5 whitespace-nowrap">
+            <FileSpreadsheet className="w-3.5 h-3.5" /> Export CSV
           </button>
         </div>
       </div>
