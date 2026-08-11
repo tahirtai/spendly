@@ -10,7 +10,7 @@ const api_routes_js_1 = __importDefault(require("./routes/api.routes.js"));
 const seed_js_1 = require("./seed.js");
 dotenv_1.default.config();
 const app = (0, express_1.default)();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 5000;
 // Security hardening
 app.disable('x-powered-by');
 // CORS — allow configured client URL and localhost during development
@@ -57,7 +57,7 @@ app.use((err, _req, res, _next) => {
     }
     res.status(500).json({ error: err.message || 'Internal Server Error' });
 });
-app.listen(PORT, async () => {
-    console.log(`🚀 Spendly Server running on http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', async () => {
+    console.log(`🚀 Spendly Server running on port ${PORT}`);
     await (0, seed_js_1.seedDatabase)();
 });

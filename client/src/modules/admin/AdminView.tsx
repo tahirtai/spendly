@@ -14,7 +14,8 @@ import {
   Image,
   AlertCircle,
   Trash2,
-  History
+  History,
+  X
 } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { api, ApiError } from '../../lib/api';
@@ -419,14 +420,24 @@ export const AdminView: React.FC = () => {
               </h2>
 
               <div className="relative w-48">
-                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   type="text"
                   placeholder="Search user..."
                   value={memberSearch}
                   onChange={(e) => setMemberSearch(e.target.value)}
-                  className="input-field pl-8 py-1.5 text-xs"
+                  className="input-field !pl-8.5 !pr-7 py-1.5 text-xs w-full"
                 />
+                {memberSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setMemberSearch('')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors p-0.5 rounded-full hover:bg-slate-100"
+                    title="Clear search"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
               </div>
             </div>
 
