@@ -37,7 +37,7 @@ function getStoredUser(): User | null {
 
 export const useAuthStore = create<AuthState>((set, get) => {
   // ── Supabase auth state listener ─────────────────────────────────────────
-  // Registered once at store creation. Keeps Zustand in sync with Supabase
+  // Registered once at store creation.  Keeps Zustand in sync with Supabase
   // session events: silent token refresh, cross-tab sign-out, etc.
   supabaseBrowser.auth.onAuthStateChange((event, session) => {
     if (event === 'TOKEN_REFRESHED' && session) {
