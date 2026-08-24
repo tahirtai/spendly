@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/useAuthStore";
 import { api, ApiError } from "@/lib/api";
+import { supabaseBrowser } from "@/lib/supabaseClient";
 import { LoginSchema, RegisterSchema } from "spendly-shared";
 import { SpendlyLogo } from "../SpendlyLogo";
 
@@ -74,7 +75,18 @@ export const Component: React.FC<AuthSwitchProps> = ({
         success: boolean;
         user: any;
         accessToken: string;
+        session: { access_token: string; refresh_token: string } | null;
       }>("/auth/login", { email: loginEmail, password: loginPassword });
+
+      // Hand the full Supabase session (including refresh token) to the browser
+      // Supabase client.  This enables automatic silent token refresh and
+      // persistent login across page refreshes and browser reopening.
+      if (data.session?.access_token && data.session?.refresh_token) {
+        await supabaseBrowser.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
+        });
+      }
 
       setUser(data.user, data.accessToken);
 
