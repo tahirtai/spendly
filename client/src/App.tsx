@@ -17,6 +17,21 @@ import { ReportsView } from './modules/reports/ReportsView';
 import { AdminView } from './modules/admin/AdminView';
 import { ProfileView } from './modules/profile/ProfileView';
 
+// Root Route Wrapper — redirects authenticated users to their dashboard/admin home,
+// while showing LandingView for unauthenticated users after session initialization completes.
+const RootRoute: React.FC = () => {
+  const { isAuthenticated, user, isInitializing } = useAuthStore();
+
+  if (isInitializing) return null;
+
+  if (isAuthenticated && user) {
+    const target = (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') ? '/admin' : '/dashboard';
+    return <Navigate to={target} replace />;
+  }
+
+  return <LandingView />;
+};
+
 // Protected Route Wrapper — wraps content in the full mobile app shell
 const ProtectedLayout: React.FC<{ children: React.ReactNode; allowedRoles?: string[] }> = ({
   children,
@@ -56,7 +71,7 @@ export const App: React.FC = () => {
       <Router>
       <Routes>
         {/* Public Routes */}
-        <Route path="/" element={<LandingView />} />
+        <Route path="/" element={<RootRoute />} />
         <Route path="/login" element={<LoginView />} />
         <Route path="/register" element={<RegisterView />} />
 
