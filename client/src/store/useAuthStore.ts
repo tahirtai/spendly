@@ -43,8 +43,8 @@ export const useAuthStore = create<AuthState>((set, get) => {
     if (event === 'TOKEN_REFRESHED' && session) {
       // Supabase silently refreshed the access token — update the mirror value.
       set({ accessToken: session.access_token });
-    } else if (event === 'SIGNED_OUT' || !session) {
-      // Session terminated (explicit logout or cross-tab sign-out).
+    } else if (event === 'SIGNED_OUT') {
+      // Explicit sign-out (or cross-tab sign-out).
       localStorage.removeItem(SAVED_USER_KEY);
       set({
         user: null,
@@ -129,7 +129,22 @@ export const useAuthStore = create<AuthState>((set, get) => {
         }
 
         // Valid session — Supabase already refreshed if needed.
-        const storedUser = getStoredUser();
+        let storedUser = getStoredUser();
+        if (!storedUser && session.user) {
+          const meta = session.user.user_metadata || {};
+          storedUser = {
+            id: session.user.id,
+            email: session.user.email || '',
+            fullName: meta.fullName || meta.full_name || session.user.email || 'User',
+            phone: session.user.phone || meta.phone || null,
+            avatarUrl: meta.avatarUrl || meta.avatar_url || null,
+            role: (meta.role as User['role']) || 'STUDENT',
+            workspaceId: meta.workspaceId || null,
+            workspaceName: meta.workspaceName || null,
+          };
+          localStorage.setItem(SAVED_USER_KEY, JSON.stringify(storedUser));
+        }
+
         set({
           user: storedUser,
           accessToken: session.access_token,
