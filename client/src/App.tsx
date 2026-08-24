@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AppShell } from './components/AppShell';
 import { SplashScreen } from './components/SplashScreen';
@@ -22,7 +22,12 @@ const ProtectedLayout: React.FC<{ children: React.ReactNode; allowedRoles?: stri
   children,
   allowedRoles,
 }) => {
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated, user, isInitializing } = useAuthStore();
+
+  // Wait for session restoration before making any routing decisions.
+  // The SplashScreen is rendered on top of everything during this period,
+  // so the user sees no flash of an empty screen or a premature /login redirect.
+  if (isInitializing) return null;
 
   if (!isAuthenticated || !user) {
     return <Navigate to="/login" replace />;
@@ -36,6 +41,15 @@ const ProtectedLayout: React.FC<{ children: React.ReactNode; allowedRoles?: stri
 };
 
 export const App: React.FC = () => {
+  const checkSession = useAuthStore((s) => s.checkSession);
+
+  // Restore the existing Supabase session once on application startup.
+  // checkSession() reads from the Supabase client's localStorage entry,
+  // refreshes the access token if needed, and sets isInitializing:false.
+  useEffect(() => {
+    checkSession();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <>
       <SplashScreen />
