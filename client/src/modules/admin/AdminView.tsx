@@ -189,30 +189,31 @@ export const AdminView: React.FC = () => {
   return (
     <div className="mobile-page">
       {/* Light Admin Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-200 pb-6">
-        <div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
+        <div className="space-y-1.5">
           <div className="flex items-center gap-2">
-            <h1 className="font-display text-2xl md:text-3xl font-bold text-[#0b1c30] flex items-center gap-3">
-              <ShieldCheck className="w-8 h-8 text-[#c05400]" />
-              Warden Admin Control Panel
-            </h1>
-            <span className="text-xs bg-[#fff2e6] text-[#c05400] border border-[#ffdbca] px-2.5 py-0.5 rounded-full font-bold uppercase">
-              {user?.role === 'SUPER_ADMIN' ? 'Super Admin' : 'Admin'} Mode
+            <span className="inline-flex items-center gap-1.5 text-[11px] bg-[#fff2e6] text-[#c05400] border border-[#ffdbca] px-3 py-1 rounded-full font-extrabold uppercase tracking-wide whitespace-nowrap shadow-2xs">
+              <ShieldCheck className="w-3.5 h-3.5 text-[#c05400] flex-shrink-0" />
+              <span>{user?.role === 'SUPER_ADMIN' ? 'Super Admin' : 'Admin'} Mode</span>
             </span>
           </div>
-          <p className="text-[#464554] text-xs mt-1">
+
+          <h1 className="font-display text-xl sm:text-2xl md:text-3xl font-extrabold text-[#0b1c30] tracking-tight leading-tight flex items-center gap-2.5">
+            Warden Admin Control Panel
+          </h1>
+          <p className="text-[#464554] text-xs leading-relaxed">
             Manage residents, verify &amp; audit payment proofs, set meal rates, and lock monthly billing cycles.
           </p>
         </div>
 
         <button
           onClick={handleMonthLockToggle}
-          className={`btn-secondary text-xs font-bold ${
+          className={`btn-secondary text-xs font-bold whitespace-nowrap flex-shrink-0 shadow-sm ${
             isMonthLocked ? 'bg-amber-100 text-amber-900 border-amber-300' : ''
           }`}
         >
           {isMonthLocked ? <Lock className="w-4 h-4 text-amber-700" /> : <Unlock className="w-4 h-4 text-[#767586]" />}
-          {isMonthLocked ? `Locked (${currentMonthLabel})` : `Lock ${currentMonthLabel}`}
+          <span>{isMonthLocked ? `Locked (${currentMonthLabel})` : `Lock ${currentMonthLabel}`}</span>
         </button>
       </div>
 
@@ -307,42 +308,83 @@ export const AdminView: React.FC = () => {
               pendingPayments.length === 0 ? (
                 <p className="text-xs text-[#767586] py-6 text-center">No pending payment submissions awaiting verification.</p>
               ) : (
-                <div className="divide-y divide-slate-100 max-h-[380px] overflow-y-auto pr-1">
+                <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1 no-scrollbar">
                   {pendingPayments.map((item) => (
-                    <div key={item.id} className="py-3.5 flex items-center justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-[#0b1c30] truncate">
-                          {item.user?.fullName || 'Resident'} — {item.note || 'Payment Submission'}
-                        </p>
-                        <p className="text-xs text-[#767586]">{item.date} • {item.type} • ₹{item.amount}</p>
+                    <div
+                      key={item.id}
+                      className="p-4 rounded-2xl border border-slate-200/80 bg-slate-50/50 hover:bg-white hover:shadow-md transition-all space-y-3"
+                    >
+                      {/* Header Row: User Info & Amount Badge */}
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="w-8 h-8 rounded-full bg-indigo-100 text-[#4441cc] font-bold text-xs flex items-center justify-center flex-shrink-0">
+                            {(item.user?.fullName || 'R').charAt(0).toUpperCase()}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs font-bold text-[#0b1c30] truncate">
+                              {item.user?.fullName || 'Resident'}
+                            </p>
+                            <p className="text-[11px] text-[#767586] truncate">
+                              {item.user?.email || item.date}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="px-3 py-1 rounded-full bg-emerald-100/80 text-emerald-800 border border-emerald-200 font-display font-extrabold text-xs flex-shrink-0">
+                          ₹{item.amount}
+                        </div>
                       </div>
 
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        {(item.proofUrl || item.screenshotPath) && (
+                      {/* Details Row: Type, Date & Note */}
+                      <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-[#464554] bg-white/70 p-2 rounded-xl border border-slate-100">
+                        <span className="font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 uppercase text-[10px]">
+                          {item.type}
+                        </span>
+                        <span className="text-slate-400">•</span>
+                        <span>{item.date}</span>
+                        {item.note && (
+                          <>
+                            <span className="text-slate-400">•</span>
+                            <span className="italic text-slate-600 truncate max-w-[200px]">"{item.note}"</span>
+                          </>
+                        )}
+                      </div>
+
+                      {/* Action Bar: View Proof & Approve (Flex-1) + Reject Dustbin Icon */}
+                      <div className="flex items-center gap-2 pt-1 border-t border-slate-200/60">
+                        {(item.proofUrl || item.screenshotPath) ? (
                           <button
                             onClick={() => handleViewProof(item)}
-                            className="btn-secondary text-xs py-1 px-2.5 flex items-center gap-1.5"
+                            className="btn-secondary text-xs py-1.5 px-3 flex items-center justify-center gap-1.5 font-bold whitespace-nowrap hover:border-indigo-300 flex-1 shadow-2xs"
                             title="View Screenshot"
                           >
                             {item.proofUrl ? (
-                              <img src={item.proofUrl} alt="Thumbnail" className="w-5 h-5 object-cover rounded" />
+                              <img src={item.proofUrl} alt="Proof" className="w-4 h-4 object-cover rounded shadow-2xs flex-shrink-0" />
                             ) : (
-                              <Image className="w-3.5 h-3.5" />
+                              <Image className="w-3.5 h-3.5 text-indigo-600 flex-shrink-0" />
                             )}
-                            Proof
+                            <span>View Proof</span>
                           </button>
+                        ) : (
+                          <div className="flex-1 flex items-center justify-center text-xs text-slate-400 italic rounded-full border border-slate-100 bg-slate-50/50 py-1.5 px-2">
+                            No Proof
+                          </div>
                         )}
+
                         <button
                           onClick={() => handleVerifyPayment(item.id, 'APPROVED')}
-                          className="btn-primary text-xs py-1.5 px-3 bg-[#006c49] hover:bg-[#005438] shadow-[#006c49]/20"
+                          className="btn-primary text-xs py-1.5 px-3 bg-[#006c49] hover:bg-[#005438] shadow-md shadow-emerald-700/20 active:scale-95 transition-all flex items-center justify-center gap-1.5 font-bold whitespace-nowrap flex-1"
                         >
-                          <CheckCircle2 className="w-3.5 h-3.5" /> Approve
+                          <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
+                          <span>Approve</span>
                         </button>
+
                         <button
                           onClick={() => handleVerifyPayment(item.id, 'REJECTED')}
-                          className="btn-danger text-xs py-1.5 px-3"
+                          className="btn-danger p-2 rounded-full border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-600 active:scale-95 transition-all flex items-center justify-center flex-shrink-0 shadow-2xs"
+                          title="Reject Payment"
                         >
-                          <XCircle className="w-3.5 h-3.5" /> Reject
+                          <Trash2 className="w-4 h-4 text-rose-600" />
                         </button>
                       </div>
                     </div>
@@ -426,7 +468,7 @@ export const AdminView: React.FC = () => {
                   placeholder="Search user..."
                   value={memberSearch}
                   onChange={(e) => setMemberSearch(e.target.value)}
-                  className="input-field !pl-8.5 !pr-7 py-1.5 text-xs w-full"
+                  className="input-field !pl-10 !pr-7 py-1.5 text-xs w-full"
                 />
                 {memberSearch && (
                   <button

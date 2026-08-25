@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Receipt, Plus, Trash2, Edit2, Search, ChevronLeft, ChevronRight, Tag, X, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Receipt, Plus, Trash2, Edit2, Search, ChevronLeft, ChevronRight, Tag, X, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { api, ApiError } from '../../lib/api';
 import { CreateExpenseSchema, UpdateExpenseSchema } from 'spendly-shared';
@@ -24,6 +24,7 @@ export const ExpensesView: React.FC = () => {
   const [expenses, setExpenses] = useState<ExpenseItem[]>([]);
   const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Filters & Controls
   const [search, setSearch] = useState('');
@@ -86,6 +87,7 @@ export const ExpensesView: React.FC = () => {
 
   const handleAddExpense = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     setFormErrors({});
     setFormStatus('');
 
@@ -105,6 +107,7 @@ export const ExpensesView: React.FC = () => {
       return;
     }
 
+    setIsSubmitting(true);
     try {
       await api.post('/expenses', result.data);
       setAmount('');
@@ -116,6 +119,8 @@ export const ExpensesView: React.FC = () => {
     } catch (err: any) {
       setFormErrors({ form: err instanceof ApiError ? err.message : 'Failed to save expense.' });
       setFormStatus('error');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -273,8 +278,22 @@ export const ExpensesView: React.FC = () => {
                 </div>
 
                 <div className="pt-2">
-                  <button type="submit" className="btn-primary w-full py-3 text-xs font-bold shadow-lg shadow-indigo-600/30">
-                    <Plus className="w-4 h-4" /> Save Expense Record
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="btn-primary w-full py-3 text-xs font-bold shadow-lg shadow-indigo-600/30 active:scale-95 transition-all duration-150 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin text-white" />
+                        <span>Saving Expense...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-4 h-4" />
+                        <span>Save Expense Record</span>
+                      </>
+                    )}
                   </button>
                 </div>
               </form>
@@ -356,8 +375,22 @@ export const ExpensesView: React.FC = () => {
               />
             </div>
 
-            <button type="submit" className="btn-primary w-full mt-2">
-              <Plus className="w-4 h-4" /> Save Expense Record
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="btn-primary w-full mt-2 active:scale-95 transition-all duration-150 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin text-white" />
+                  <span>Saving Expense...</span>
+                </>
+              ) : (
+                <>
+                  <Plus className="w-4 h-4" />
+                  <span>Save Expense Record</span>
+                </>
+              )}
             </button>
           </form>
         </div>
@@ -373,7 +406,7 @@ export const ExpensesView: React.FC = () => {
                 placeholder="Search note or category..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="input-field !pl-9.5 !pr-8 py-2 text-xs w-full"
+                className="input-field !pl-10 !pr-8 py-2 text-xs w-full"
               />
               {search && (
                 <button

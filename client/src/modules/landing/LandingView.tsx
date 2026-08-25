@@ -52,10 +52,16 @@ export const LandingView: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-2">
-              <Link to="/login" className="btn-secondary px-3.5 py-1.5 text-xs font-bold text-[#0b1c30]">
+              <Link
+                to="/login"
+                className="px-3.5 py-1.5 rounded-full text-xs font-bold text-[#4441cc] bg-[#5e5ce6]/10 hover:bg-[#5e5ce6]/20 border border-[#5e5ce6]/25 transition-all duration-200 active:scale-95 whitespace-nowrap shadow-2xs"
+              >
                 Sign In
               </Link>
-              <Link to="/register" className="btn-primary px-3.5 py-1.5 text-xs font-bold shadow-md shadow-indigo-500/20">
+              <Link
+                to="/register"
+                className="px-4 py-1.5 rounded-full text-xs font-bold text-white bg-gradient-to-r from-[#5e5ce6] to-[#4441cc] hover:from-[#4441cc] hover:to-[#312e81] shadow-md shadow-indigo-500/25 transition-all duration-200 hover:scale-105 active:scale-95 whitespace-nowrap"
+              >
                 Join Now
               </Link>
             </div>
@@ -85,10 +91,17 @@ export const LandingView: React.FC = () => {
 
               {/* Action Buttons */}
               <div className="w-full flex flex-col gap-2.5 pt-2">
-                <Link to="/register" className="btn-primary w-full py-3.5 text-sm font-bold shadow-lg shadow-indigo-600/25">
-                  Get Started Free <ArrowRight className="h-4 w-4 ml-1" />
+                <Link
+                  to="/register"
+                  className="btn-primary w-full py-3.5 text-sm font-bold shadow-lg shadow-indigo-600/25 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                >
+                  <span>Get Started Free</span>
+                  <ArrowRight className="h-4 w-4" />
                 </Link>
-                <Link to="/login" className="btn-secondary w-full py-3 text-sm font-bold text-[#0b1c30]">
+                <Link
+                  to="/login"
+                  className="btn-secondary w-full py-3 text-sm font-bold text-[#0b1c30] hover:scale-[1.01] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                >
                   Sign In to Workspace
                 </Link>
               </div>

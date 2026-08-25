@@ -7,9 +7,9 @@ export const LoginView: React.FC = () => {
   const initialEmail = (location.state as any)?.registeredEmail || '';
 
   return (
-    <div className="spendly-stage min-h-screen">
-      <div className="spendly-mobile-shell flex min-h-screen items-center px-5 py-10">
-        <AuthSwitch initialMode="login" defaultEmail={initialEmail} />
+    <div className="spendly-stage min-h-screen flex items-center justify-center p-3 sm:p-6">
+      <div className="spendly-mobile-shell flex min-h-screen items-center justify-center px-4 py-6">
+        <AuthSwitch initialMode="login" defaultEmail={initialEmail} className="my-auto" />
       </div>
     </div>
   );
