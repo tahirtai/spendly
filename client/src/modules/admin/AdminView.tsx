@@ -312,15 +312,15 @@ export const AdminView: React.FC = () => {
                   {pendingPayments.map((item) => (
                     <div
                       key={item.id}
-                      className="p-4 rounded-2xl border border-slate-200/80 bg-slate-50/50 hover:bg-white hover:shadow-md transition-all space-y-3"
+                      className="p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 bg-slate-50/50 hover:bg-white hover:shadow-md transition-all space-y-3 overflow-hidden w-full min-w-0 max-w-full"
                     >
                       {/* Header Row: User Info & Amount Badge */}
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <div className="w-8 h-8 rounded-full bg-indigo-100 text-[#4441cc] font-bold text-xs flex items-center justify-center flex-shrink-0">
+                      <div className="flex items-center justify-between gap-2 min-w-0 w-full">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="w-8 h-8 rounded-full bg-indigo-100 text-[#4441cc] font-bold text-xs flex items-center justify-center shrink-0">
                             {(item.user?.fullName || 'R').charAt(0).toUpperCase()}
                           </div>
-                          <div className="min-w-0">
+                          <div className="min-w-0 flex-1">
                             <p className="text-xs font-bold text-[#0b1c30] truncate">
                               {item.user?.fullName || 'Resident'}
                             </p>
@@ -330,61 +330,61 @@ export const AdminView: React.FC = () => {
                           </div>
                         </div>
 
-                        <div className="px-3 py-1 rounded-full bg-emerald-100/80 text-emerald-800 border border-emerald-200 font-display font-extrabold text-xs flex-shrink-0">
+                        <div className="px-2.5 py-1 rounded-full bg-emerald-100/80 text-emerald-800 border border-emerald-200 font-display font-extrabold text-xs shrink-0 whitespace-nowrap">
                           ₹{item.amount}
                         </div>
                       </div>
 
                       {/* Details Row: Type, Date & Note */}
-                      <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-[#464554] bg-white/70 p-2 rounded-xl border border-slate-100">
-                        <span className="font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 uppercase text-[10px]">
+                      <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-[#464554] bg-white/70 p-2 rounded-xl border border-slate-100 max-w-full overflow-hidden">
+                        <span className="font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 uppercase text-[10px] shrink-0">
                           {item.type}
                         </span>
                         <span className="text-slate-400">•</span>
-                        <span>{item.date}</span>
+                        <span className="shrink-0">{item.date}</span>
                         {item.note && (
                           <>
                             <span className="text-slate-400">•</span>
-                            <span className="italic text-slate-600 truncate max-w-[200px]">"{item.note}"</span>
+                            <span className="italic text-slate-600 truncate max-w-[130px] sm:max-w-[200px]">"{item.note}"</span>
                           </>
                         )}
                       </div>
 
-                      {/* Action Bar: View Proof & Approve (Flex-1) + Reject Dustbin Icon */}
-                      <div className="flex items-center gap-2 pt-1 border-t border-slate-200/60">
+                      {/* Action Bar: View Proof & Approve (Flex-1 with min-w-0) + Reject Dustbin (Shrink-0) */}
+                      <div className="flex items-center gap-1.5 pt-1 border-t border-slate-200/60 w-full min-w-0 overflow-hidden">
                         {(item.proofUrl || item.screenshotPath) ? (
                           <button
                             onClick={() => handleViewProof(item)}
-                            className="btn-secondary text-xs py-1.5 px-3 flex items-center justify-center gap-1.5 font-bold whitespace-nowrap hover:border-indigo-300 flex-1 shadow-2xs"
+                            className="btn-secondary text-xs py-1.5 px-2 flex items-center justify-center gap-1 font-bold whitespace-nowrap hover:border-indigo-300 flex-1 min-w-0 overflow-hidden shadow-2xs rounded-xl"
                             title="View Screenshot"
                           >
                             {item.proofUrl ? (
-                              <img src={item.proofUrl} alt="Proof" className="w-4 h-4 object-cover rounded shadow-2xs flex-shrink-0" />
+                              <img src={item.proofUrl} alt="Proof" className="w-3.5 h-3.5 object-cover rounded shadow-2xs shrink-0" />
                             ) : (
-                              <Image className="w-3.5 h-3.5 text-indigo-600 flex-shrink-0" />
+                              <Image className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
                             )}
-                            <span>View Proof</span>
+                            <span className="truncate">View Proof</span>
                           </button>
                         ) : (
-                          <div className="flex-1 flex items-center justify-center text-xs text-slate-400 italic rounded-full border border-slate-100 bg-slate-50/50 py-1.5 px-2">
-                            No Proof
+                          <div className="flex-1 min-w-0 flex items-center justify-center text-xs text-slate-400 italic rounded-xl border border-slate-100 bg-slate-50/50 py-1.5 px-2 overflow-hidden">
+                            <span className="truncate">No Proof</span>
                           </div>
                         )}
 
                         <button
                           onClick={() => handleVerifyPayment(item.id, 'APPROVED')}
-                          className="btn-primary text-xs py-1.5 px-3 bg-[#006c49] hover:bg-[#005438] shadow-md shadow-emerald-700/20 active:scale-95 transition-all flex items-center justify-center gap-1.5 font-bold whitespace-nowrap flex-1"
+                          className="btn-primary text-xs py-1.5 px-2 bg-[#006c49] hover:bg-[#005438] shadow-md shadow-emerald-700/20 active:scale-95 transition-all flex items-center justify-center gap-1 font-bold whitespace-nowrap flex-1 min-w-0 overflow-hidden rounded-xl"
                         >
-                          <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
-                          <span>Approve</span>
+                          <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                          <span className="truncate">Approve</span>
                         </button>
 
                         <button
                           onClick={() => handleVerifyPayment(item.id, 'REJECTED')}
-                          className="btn-danger p-2 rounded-full border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-600 active:scale-95 transition-all flex items-center justify-center flex-shrink-0 shadow-2xs"
+                          className="btn-danger h-8 w-8 min-w-[32px] max-w-[32px] rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-600 active:scale-95 transition-all flex items-center justify-center shrink-0 shadow-2xs"
                           title="Reject Payment"
                         >
-                          <Trash2 className="w-4 h-4 text-rose-600" />
+                          <Trash2 className="w-4 h-4 text-rose-600 shrink-0" />
                         </button>
                       </div>
                     </div>
